@@ -30,6 +30,7 @@
     "@typescript-eslint/parser": "^5.8.1",
     "eslint": "^8.5.0",
     "eslint-config-google": "^0.14.0",
+    "fake-indexeddb": "^4.0.0-beta.2",
     "husky": "^7.0.4",
     "lint-staged": "^12.1.4",
     "mocha": "^9.1.3",
