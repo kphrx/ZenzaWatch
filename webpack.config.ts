@@ -27,17 +27,13 @@ const config: Configuration = {
   entry,
   output: {
     path: resolve(__dirname, 'dist'),
-    filename: '[name].user.js',
+    filename: '[name].js',
   },
   module: {
     rules: [
       {
-        test: /(\.|\/)worker.ts$/,
-        loader: 'worker-loader',
-        options: {
-          worker: 'Worker',
-          inline: 'no-fallback',
-        },
+        test: /(\.|\/)worker\.ts$/,
+        type: 'asset/source',
       },
       {
         test: /\.ts$/,

@@ -9,6 +9,10 @@ export {
   ResultType,
 } from './controller';
 
-export {
-  default as IndexedDBAccessWorker,
-} from './worker.ts';
+/**
+ * IndexedDB access worker
+ * @return {Worker}
+ */
+export const IndexedDBAccessWorker = () => {
+  return new Worker(new URL('./worker', import.meta.url));
+};
