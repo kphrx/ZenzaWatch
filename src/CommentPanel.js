@@ -943,7 +943,7 @@ const CommentListItemView = (() => {
       }
       .commentListItem .nicoru-icon {
         position: absolute;
-        pointer-events: none;
+        pointer-events: auto;
         display: inline-block;
         cursor: pointer;
         visibility: hidden;
@@ -957,9 +957,6 @@ const CommentListItemView = (() => {
       }
       .commentListItem:hover .nicoru-icon {
         visibility: visible;
-      }
-      .is-premium .commentListItem:hover .nicoru-icon {
-        pointer-events: auto;
       }
       .commentListItem.nicotta .nicoru-icon {
         visibility: visible;

@@ -341,13 +341,10 @@ const VideoInfoLoader = (function () {
         const data = parseWatchApiData(json);
         //window.console.info('linkedChannelData', data);
         originalData.dmcInfo = data.dmcInfo;
-        originalData.isDmcOnly = data.isDmcOnly;
+        originalData.domandInfo = data.domandInfo;
         originalData.isPlayable = data.isPlayable;
-        originalData.isMp4 = data.isMp4;
-        originalData.isFlv = data.isFlv;
-        originalData.isSwf = data.isSwf;
-        originalData.isEco = data.isEco;
         originalData.isDmc = data.isDmc;
+        originalData.isDomand = data.isDomand;
         return originalData;
       })
       .catch(() => {
