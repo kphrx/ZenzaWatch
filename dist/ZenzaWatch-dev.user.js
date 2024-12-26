@@ -32,7 +32,7 @@
 // @exclude        *://ext.nicovideo.jp/thumb_channel/*
 // @grant          none
 // @author         segabito
-// @version        2.6.3-fix-playlist.44
+// @version        2.6.3-fix-playlist.45
 // @run-at         document-body
 // @require        https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js
 // @updateURL      https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaWatch-dev.user.js
@@ -101,7 +101,7 @@ AntiPrototypeJs();
     let {dimport, workerUtil, IndexedDbStorage, Handler, PromiseHandler, Emitter, parseThumbInfo, WatchInfoCacheDb, StoryboardCacheDb, VideoSessionWorker} = window.ZenzaLib;
     START_PAGE_QUERY = decodeURIComponent(START_PAGE_QUERY);
 
-    var VER = '2.6.3-fix-playlist.44';
+    var VER = '2.6.3-fix-playlist.45';
     const ENV = 'DEV';
 
 
@@ -6482,13 +6482,10 @@ const VideoInfoLoader = (function () {
 			.then(json => {
 				const data = parseWatchApiData(json);
 				originalData.dmcInfo = data.dmcInfo;
-				originalData.isDmcOnly = data.isDmcOnly;
+				originalData.domandInfo = data.domandInfo;
 				originalData.isPlayable = data.isPlayable;
-				originalData.isMp4 = data.isMp4;
-				originalData.isFlv = data.isFlv;
-				originalData.isSwf = data.isSwf;
-				originalData.isEco = data.isEco;
 				originalData.isDmc = data.isDmc;
+				originalData.isDomand = data.isDomand;
 				return originalData;
 			})
 			.catch(() => {
@@ -20066,7 +20063,7 @@ const CommentListItemView = (() => {
 			}
 			.commentListItem .nicoru-icon {
 				position: absolute;
-				pointer-events: none;
+				pointer-events: auto;
 				display: inline-block;
 				cursor: pointer;
 				visibility: hidden;
@@ -20080,9 +20077,6 @@ const CommentListItemView = (() => {
 			}
 			.commentListItem:hover .nicoru-icon {
 				visibility: visible;
-			}
-			.is-premium .commentListItem:hover .nicoru-icon {
-				pointer-events: auto;
 			}
 			.commentListItem.nicotta .nicoru-icon {
 				visibility: visible;
