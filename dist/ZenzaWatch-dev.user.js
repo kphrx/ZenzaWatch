@@ -32,7 +32,7 @@
 // @exclude        *://ext.nicovideo.jp/thumb_channel/*
 // @grant          none
 // @author         segabito
-// @version        2.6.3-fix-playlist.45
+// @version        2.6.3-fix-playlist.46
 // @run-at         document-body
 // @require        https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js
 // @updateURL      https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaWatch-dev.user.js
@@ -101,7 +101,7 @@ AntiPrototypeJs();
     let {dimport, workerUtil, IndexedDbStorage, Handler, PromiseHandler, Emitter, parseThumbInfo, WatchInfoCacheDb, StoryboardCacheDb, VideoSessionWorker} = window.ZenzaLib;
     START_PAGE_QUERY = decodeURIComponent(START_PAGE_QUERY);
 
-    var VER = '2.6.3-fix-playlist.45';
+    var VER = '2.6.3-fix-playlist.46';
     const ENV = 'DEV';
 
 
@@ -6511,12 +6511,11 @@ const VideoInfoLoader = (function () {
 		if (data.isNeedPayment && data.genreKey === 'anime' && Config.getValue('loadLinkedChannelVideo')) {
 			const query = new URLSearchParams({ videoId: data.watchApiData.videoDetail.id, _frontendId: data.msgInfo.frontendId });
 			const url = `https://public-api.ch.nicovideo.jp/v1/user/channelVideoDAnimeLinks?${query.toString()}`;
-			const linkedChannelVideos = await netUtil.fetch(url, { credentials: 'include' })
-				.then(r => r.json().data?.items ?? []).catch(() => []);
-			data.linkedChannelVideo = linkedChannelVideos.find(ch => {
+			const linkedChannelVideos = await netUtil.fetch(url, { credentials: 'include' }).then(r => r.json()).catch(() => ({}));
+			data.linkedChannelVideo = linkedChannelVideos.data?.items?.find(ch => {
 				return !!ch.isChannelMember;
 			});
-			if (data.linkedChannelVideo) {
+			if (data.linkedChannelVideo != null) {
 				return await loadLinkedChannelVideoInfo(data);
 			}
 		}
