@@ -391,12 +391,11 @@ const VideoInfoLoader = (function () {
     if (data.isNeedPayment && data.genreKey === 'anime' && Config.getValue('loadLinkedChannelVideo')) {
       const query = new URLSearchParams({ videoId: data.watchApiData.videoDetail.id, _frontendId: data.msgInfo.frontendId });
       const url = `https://public-api.ch.nicovideo.jp/v1/user/channelVideoDAnimeLinks?${query.toString()}`;
-      const linkedChannelVideos = await netUtil.fetch(url, { credentials: 'include' })
-        .then(r => r.json().data?.items ?? []).catch(() => []);
-      data.linkedChannelVideo = linkedChannelVideos.find(ch => {
+      const linkedChannelVideos = await netUtil.fetch(url, { credentials: 'include' }).then(r => r.json()).catch(() => ({}));
+      data.linkedChannelVideo = linkedChannelVideos.data?.items?.find(ch => {
         return !!ch.isChannelMember;
       });
-      if (data.linkedChannelVideo) {
+      if (data.linkedChannelVideo != null) {
         return await loadLinkedChannelVideoInfo(data);
       }
     }
