@@ -273,7 +273,9 @@ function loadTemplateFile(srcDir, indexFile, outFile, params) {
       }
     }
     if (line.match(/\/\/ *==\/UserScript==/)) {
-      lines.push(`// @updateURL      https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/${outFile}`);
+      lines.push(`// @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/${outFile}`);
+      // meta.js でUserScriptブロックのみを含んだファイルを用意すると嬉しいやつ。そうでなければdownloadURLだけ持っていれば良い
+      // lines.push(`// @updateURL      https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/${outFile}`);
       lines.push(line);
       lines.push('/* eslint-disable */');
       return;
