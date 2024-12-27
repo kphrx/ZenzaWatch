@@ -324,7 +324,7 @@ const VideoSessionWorker = (() => {
         }
 
         const query = new URLSearchParams({ actionTrackId: this._videoInfo.actionTrackId });
-        const url = `https://nvapi.nicovideo.jp/v1/watch/${this._videoInfo.videoId}/access-rights/hls?${query.toString()}`;
+        const url = `https://nvapi.nicovideo.jp/v1/watch/${this._domandInfo.videoId}/access-rights/hls?${query.toString()}`;
         const result = await util.fetch(url, {
           method: 'post',
           headers: {
@@ -755,7 +755,7 @@ const VideoSessionWorker = (() => {
 
       async _createSession() {
         const query = new URLSearchParams({ actionTrackId: this._videoInfo.actionTrackId });
-        const url = `https://nvapi.nicovideo.jp/v1/watch/${this._videoInfo.videoId}/access-rights/storyboard?${query.toString()}`;
+        const url = `https://nvapi.nicovideo.jp/v1/watch/${this._info.videoId}/access-rights/storyboard?${query.toString()}`;
         try {
           const result = await util.fetch(url, {
             method: 'post',

@@ -23,9 +23,15 @@ class JSONable {
 }
 
 class DomandInfo extends JSONable {
-  constructor(rawData) {
+  constructor(rawData, videoDetail, linkedChannelVideo) {
     super();
     this._rawData = rawData;
+    this._videoDetail = videoDetail;
+    this._linkedChannelVideo = linkedChannelVideo;
+  }
+
+  get videoId() {
+    return this._linkedChannelVideo != null ? this._linkedChannelVideo.linkedVideoId : this._videoDetail.id;
   }
 
   get accessRightKey() {
@@ -259,7 +265,7 @@ class VideoInfoModel extends JSONable {
     this._ngFilters = info.ngFilters;
     this._msgInfo = info.msgInfo;
     this._dmcInfo = (info.dmcInfo && info.dmcInfo.movie.session) ? new DmcInfo(info.dmcInfo) : null;
-    this._domandInfo = info.domandInfo ? new DomandInfo(info.domandInfo) : null;
+    this._domandInfo = info.domandInfo ? new DomandInfo(info.domandInfo, info.watchApiData.videoDetail, info.linkedChannelVideo) : null;
     this._relatedVideo = info.playlist; // playlistという名前だが実質は関連動画
     this._playlistToken = info.playlistToken;
     this._watchAuthKey = info.watchAuthKey;
