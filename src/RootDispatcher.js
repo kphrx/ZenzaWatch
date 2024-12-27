@@ -47,7 +47,31 @@ const RootDispatcher = (() => {
         }
         case 'picture-in-picture':
           documentPictureInPicture?.requestWindow().then(pipWindow => {
-            pipWindow.document.body.append(document.querySelector('.zenzaPlayerContainer'));
+            for (const styleSheet of [...document.styleSheets]) {
+              try {
+                const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
+                const style = document.createElement('style');
+
+                style.textContent = cssRules;
+                pipWindow.document.head.appendChild(style);
+              } catch (e) {
+                const link = document.createElement('link');
+
+                link.rel = 'stylesheet';
+                link.type = styleSheet.type;
+                link.media = styleSheet.media;
+                link.href = styleSheet.href;
+                pipWindow.document.head.appendChild(link);
+              }
+            }
+
+            pipWindow.document.body.append(document.querySelector('.zenzaVideoPlayerDialogInner'));
+
+            pipWindow.addEventListener("pagehide", (event) => {
+              const dialog = document.querySelector("#zenzaVideoPlayerDialog");
+              const pipPlayer = event.target.querySelector(".zenzaVideoPlayerDialogInner");
+              playerContainer.append(pipPlayer);
+            });
           }) ?? document.querySelector('.zenzaWatchVideoElement').requestPictureInPicture();
           break;
         case 'toggle-comment':
