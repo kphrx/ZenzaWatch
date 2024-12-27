@@ -358,8 +358,8 @@ const VideoInfoLoader = (function () {
     const originalVideoId = originalData.watchApiData.videoDetail.id;
     const videoId = linkedChannelVideo.linkedVideoId;
 
-    originalData.linkedChannelData = null;
     if (originalVideoId === videoId) {
+      originalData.linkedChannelVideo = null;
       return Promise.reject();
     }
 
@@ -381,6 +381,7 @@ const VideoInfoLoader = (function () {
         return originalData;
       })
       .catch(() => {
+        originalData.linkedChannelVideo = null;
         return Promise.reject({reason: 'network', message: '通信エラー(loadLinkedChannelVideoInfo)'});
       });
   };
