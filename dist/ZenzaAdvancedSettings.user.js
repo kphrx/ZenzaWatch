@@ -9,7 +9,7 @@
 // @grant       none
 // @noframes
 // @require     https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js
-// @updateURL      https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaAdvancedSettings.user.js
+// @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaAdvancedSettings.user.js
 // ==/UserScript==
 /* eslint-disable */
 

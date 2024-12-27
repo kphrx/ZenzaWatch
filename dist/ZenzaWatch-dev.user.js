@@ -32,10 +32,10 @@
 // @exclude        *://ext.nicovideo.jp/thumb_channel/*
 // @grant          none
 // @author         segabito
-// @version        2.6.3-fix-playlist.46
+// @version        2.6.3-fix-playlist.47
 // @run-at         document-body
 // @require        https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js
-// @updateURL      https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaWatch-dev.user.js
+// @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaWatch-dev.user.js
 // ==/UserScript==
 /* eslint-disable */
 // import {SettingPanel} from './SettingPanel';
@@ -101,7 +101,7 @@ AntiPrototypeJs();
     let {dimport, workerUtil, IndexedDbStorage, Handler, PromiseHandler, Emitter, parseThumbInfo, WatchInfoCacheDb, StoryboardCacheDb, VideoSessionWorker} = window.ZenzaLib;
     START_PAGE_QUERY = decodeURIComponent(START_PAGE_QUERY);
 
-    var VER = '2.6.3-fix-playlist.46';
+    var VER = '2.6.3-fix-playlist.47';
     const ENV = 'DEV';
 
 
@@ -6469,8 +6469,8 @@ const VideoInfoLoader = (function () {
 		const linkedChannelVideo = originalData.linkedChannelVideo;
 		const originalVideoId = originalData.watchApiData.videoDetail.id;
 		const videoId = linkedChannelVideo.linkedVideoId;
-		originalData.linkedChannelData = null;
 		if (originalVideoId === videoId) {
+			originalData.linkedChannelVideo = null;
 			return Promise.reject();
 		}
 		const url = `https://www.nicovideo.jp/watch/${videoId}?responseType=json`;
@@ -6489,6 +6489,7 @@ const VideoInfoLoader = (function () {
 				return originalData;
 			})
 			.catch(() => {
+				originalData.linkedChannelVideo = null;
 				return Promise.reject({reason: 'network', message: '通信エラー(loadLinkedChannelVideoInfo)'});
 			});
 	};
@@ -7449,9 +7450,14 @@ class JSONable {
 	}
 }
 class DomandInfo extends JSONable {
-	constructor(rawData) {
+	constructor(rawData, videoDetail, linkedChannelVideo) {
 		super();
 		this._rawData = rawData;
+		this._videoDetail = videoDetail;
+		this._linkedChannelVideo = linkedChannelVideo;
+	}
+	get videoId() {
+		return this._linkedChannelVideo != null ? this._linkedChannelVideo.linkedVideoId : this._videoDetail.id;
 	}
 	get accessRightKey() {
 		return this._rawData.accessRightKey || '';
@@ -7636,7 +7642,7 @@ class VideoInfoModel extends JSONable {
 		this._ngFilters = info.ngFilters;
 		this._msgInfo = info.msgInfo;
 		this._dmcInfo = (info.dmcInfo && info.dmcInfo.movie.session) ? new DmcInfo(info.dmcInfo) : null;
-		this._domandInfo = info.domandInfo ? new DomandInfo(info.domandInfo) : null;
+		this._domandInfo = info.domandInfo ? new DomandInfo(info.domandInfo, info.watchApiData.videoDetail, info.linkedChannelVideo) : null;
 		this._relatedVideo = info.playlist; // playlistという名前だが実質は関連動画
 		this._playlistToken = info.playlistToken;
 		this._watchAuthKey = info.watchAuthKey;
@@ -32793,7 +32799,7 @@ const VideoSessionWorker = (() => {
 					videos = [videoFormat];
 				}
 				const query = new URLSearchParams({ actionTrackId: this._videoInfo.actionTrackId });
-				const url = `https://nvapi.nicovideo.jp/v1/watch/${this._videoInfo.videoId}/access-rights/hls?${query.toString()}`;
+				const url = `https://nvapi.nicovideo.jp/v1/watch/${this._domandInfo.videoId}/access-rights/hls?${query.toString()}`;
 				const result = await util.fetch(url, {
 					method: 'post',
 					headers: {
@@ -33174,7 +33180,7 @@ const VideoSessionWorker = (() => {
 			}
 			async _createSession() {
 				const query = new URLSearchParams({ actionTrackId: this._videoInfo.actionTrackId });
-				const url = `https://nvapi.nicovideo.jp/v1/watch/${this._videoInfo.videoId}/access-rights/storyboard?${query.toString()}`;
+				const url = `https://nvapi.nicovideo.jp/v1/watch/${this._info.videoId}/access-rights/storyboard?${query.toString()}`;
 				try {
 					const result = await util.fetch(url, {
 						method: 'post',

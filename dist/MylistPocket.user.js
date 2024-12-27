@@ -31,7 +31,7 @@
 // @author      segabito macmoto
 // @license     public domain
 // @require     https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.5/lodash.min.js
-// @updateURL      https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/MylistPocket.user.js
+// @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/MylistPocket.user.js
 // ==/UserScript==
 /* eslint-disable */
 
@@ -5768,7 +5768,7 @@ const workerUtil = (() => {
 					case 'commandResult':
 						if (promises[sessionId]) {
 							if (status === 'ok') {
-									promises[sessionId].resolve(params.result);
+								promises[sessionId].resolve(params.result);
 							} else {
 								promises[sessionId].reject(params.result);
 							}

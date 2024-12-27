@@ -26,7 +26,7 @@
 // @noframes
 // @require        https://cdn.jsdelivr.net/npm/hls.js@latest
 // @run-at         document-start
-// @updateURL      https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaHLS.user.js
+// @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaHLS.user.js
 // ==/UserScript==
 /* eslint-disable */
 

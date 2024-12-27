@@ -8,7 +8,7 @@
 // @version     0.0.11
 // @grant       none
 // @license     public domain
-// @updateURL      https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/CapTube.user.js
+// @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/CapTube.user.js
 // ==/UserScript==
 /* eslint-disable */
 
@@ -108,7 +108,7 @@ const workerUtil = (() => {
 					case 'commandResult':
 						if (promises[sessionId]) {
 							if (status === 'ok') {
-									promises[sessionId].resolve(params.result);
+								promises[sessionId].resolve(params.result);
 							} else {
 								promises[sessionId].reject(params.result);
 							}
