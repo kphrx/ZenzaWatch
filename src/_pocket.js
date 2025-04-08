@@ -478,7 +478,7 @@ AntiPrototypeJs().then(() => {
     `).trim();
 
     const nicoadHideCss = `
-      .nicoadVideoItem {
+      .nicoadVideoItemWrapper {
         display: none;
       }
       .MatrixRankingBannerAd,
