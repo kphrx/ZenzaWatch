@@ -3612,25 +3612,22 @@ Object.assign(util, textUtil);
 
     const getNgEnv = async () => {
       if (location.host === 'www.nicovideo.jp' &&
-         (location.pathname.startsWith('/ranking') ||
-          location.pathname.startsWith('/tag')     ||
+         (location.pathname.startsWith('/tag') ||
           location.pathname.startsWith('/search'))
       ) {
-        if (document.querySelector('#MatrixRanking-app')) {
-          await waitForDom('.RankingMatrixVideosRow');
-        }
         return {
-          query:
-            '.item[data-video-id]:not(.is-ng-wait), .item_cell[data-video-id]:not(.is-ng-wait), '+
-            '.VideoItem:not(.is-ng-wait), .RankingMainVideo[data-video-id]:not(.is-ng-wait)',
-          container:
-            Array.from(
-              document.querySelectorAll(
-                '.contentBody .list, .container.column1024-0,'+
-                '.RankingMatrixVideosRow, '+
-                '.RankingMainContainer, .RankingVideoListContainer')
-            ),
+          query: '.item[data-video-id]:not(.is-ng-wait)',
+          container: document.querySelectorAll('.contentBody .videoListInner'),
           subtree: false
+        };
+      }
+      if (location.host === 'www.nicovideo.jp' &&
+          location.pathname.startsWith('/ranking')) {
+        await waitForDom('[data-anchor-page^="ranking_"]');
+        return {
+          query: '[data-anchor-page^="ranking_"][href*="watch/"]:not(.is-ng-wait)',
+          container: document.querySelector('[aria-label="nicovideo-content"]'),
+          subtree: true
         };
       }
       if (location.host === 'www.nicovideo.jp' &&
@@ -3769,7 +3766,6 @@ Object.assign(util, textUtil);
       };
       update();
 
-      if (!container) { return; }
       const mutationObserver = new MutationObserver(mutations => {
         for (const record of mutations) {
           const container = record.target;
