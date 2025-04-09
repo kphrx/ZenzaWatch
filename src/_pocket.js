@@ -489,93 +489,8 @@ AntiPrototypeJs().then(() => {
     `.trim();
 
     const responsiveCss = `
-
-      @media screen and (max-width: 1350px) {
-        .RankingGenreListContainer {
-          border-right: 0;
-          border-left: 56px solid #fafafa;
-        }
-        .RankingGenreListContainer-categoryHelp {
-          position: static;
-        }
-        .GlobalHeader#siteHeader #siteHeaderInner {
-          width: 1024px;
-        }
-        .RankingHeaderContainer-headerInner {
-          margin-left: 64px;
-          width: 1214px;
-        }
-        .LaneHeader {
-          flex: 1 1 160px;
-          width: 160px;
-        }
-        .LaneHeader+.LaneHeader {
-          /*margin-left: 13px;*/
-        }
-        .LaneHeader>p {
-          white-space: normal;
-          height: 32px;
-          line-height: 16px;
-        }
-        .CustomButton {
-          width: 136px;
-        }
-        .MatrixRanking-body .BaseLayout-block {
-          width: ${1280}px;
-        }
-        .RankingMainContainer-decorateChunk+.RankingMainContainer-decorateChunk,
-         .RankingMainContainer-decorateChunk>*+* {
-           margin-top: 0;
-        }
-        .RankingMainContainer {
-          width: ${1024}px;
-        }
-        .MatrixRanking-body .RankingMatrixVideosRow {
-          width: ${1024 + 64}px;
-          margin-left: ${-64}px;
-        }
-          .RankingMatrixNicoadsRow>*+*,
-          .RankingMatrixVideosRow>:nth-child(n+3) {
-              margin-left: 13px;
-          }
-          .RankingBaseItem {
-            width: 160px;
-            height: 196px;
-          }
-            .RankingBaseItem .Card-link {
-            grid-template-rows: 90px auto;
-            }
-            .VideoItem.RankingBaseItem .VideoThumbnail {
-              border-radius: 3px 3px 0 0;
-            }
-
-            [data-nicoad-grade] .Thumbnail.VideoThumbnail .Thumbnail-image {
-                margin: 3px;
-                background-size: calc(100% + 6px);
-            }
-            [data-nicoad-grade] .Thumbnail.VideoThumbnail:after {
-                width: 40px;
-                height: 40px;
-                background-size: 80px 80px;
-            }
-            .Thumbnail.VideoThumbnail .VideoLength {
-              bottom: 3px;
-              right: 3px;
-            }
-            .VideoThumbnailComment {
-              transform: scale(0.8333);
-            }
-            .RankingBaseItem-meta {
-              position: static;
-              padding: 0 4px 8px;
-            }
-            .VideoItem.RankingBaseItem .VideoItem-metaCount>.VideoMetaCount {
-              white-space: nowrap;
-            }
-        .RankingMainContainer .ToTopButton {
-          transform: translateX(calc(100vw / 2 - 100% - 36px));
-          user-select: none;
-        }
+      [aria-label="nicovideo-content"]:has([data-anchor-page="ranking_custom"]) > section > div {
+        min-width: unset;
       }
     `;
 
@@ -1600,7 +1515,7 @@ AntiPrototypeJs().then(() => {
                   data-config-name="responsive.matrix"
                   data-config-namespace=""
                 >
-                <span>ランキングTOPのサムネイルを画面幅に合わせて小さくする</span>
+                <span>カスタムランキングのサムネイルを画面幅に合わせて小さくする</span>
               </label>
 
               <h2>NG設定(リロード後に反映)</h2>
@@ -3990,7 +3905,7 @@ Object.assign(util, textUtil);
       if (config.props.nicoad.hide) {
         util.addStyle(nicoadHideCss);
       }
-      if (document.body.classList.contains('MatrixRanking-body') &&
+      if (document.querySelector('[data-anchor-page="ranking_custom"]') != null &&
           config.props.responsive.matrix) {
         util.addStyle(responsiveCss);
       }
