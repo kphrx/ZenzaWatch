@@ -3710,12 +3710,13 @@ Object.assign(util, textUtil);
           item.dataset.decorationVideoId;
         const ignore = () => item.classList.add('is-ng-ignore');
         if (!watchId) {
-          const a = item.querySelector('a[href*=\'watch/\']');
+          const a = item instanceof HTMLAnchorElement ? item : item.querySelector('a[href*=\'watch/\']');
           let m;
-          if (!a) { return ignore(); }
-          if (a.hostname !== 'www.nicovideo.jp') { return ignore(); }
-          if ((m = /^\/watch\/([a-z0-9]+)/.exec(a.pathname)) === null) { return ignore(); }
-          watchId = m[1];
+          if (a != null &&
+              a.hostname === 'www.nicovideo.jp' &&
+              (m = /^\/watch\/([a-z0-9]+)/.exec(a.pathname)) !== null) {
+            watchId = m[1];
+          }
         }
 
         if (!watchId) {
