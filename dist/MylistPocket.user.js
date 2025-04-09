@@ -26,7 +26,7 @@
 // @exclude     *://dic.nicovideo.jp/p/*
 // @exclude     *://ext.nicovideo.jp/thumb/*
 // @exclude     *://ext.nicovideo.jp/thumb_channel/*
-// @version     0.5.15-fix-mylist-api.7
+// @version     0.5.15-fix-mylist-api.8
 // @grant       none
 // @author      segabito macmoto
 // @license     public domain
@@ -492,103 +492,19 @@ AntiPrototypeJs().then(() => {
     `).trim();
 
     const nicoadHideCss = `
-      .nicoadVideoItem {
+      .nicoadVideoItemWrapper {
         display: none;
       }
-      .MatrixRankingBannerAd,
-      .RankingMatrixNicoadsRow, .RankingMainNicoad {
+      div:has(> div > div > div > div > a[data-anchor-page="ranking_for-you"] > div > div:is(.c_serviceColor\.nicoadGold, .c_serviceColor\.nicoadGray)),
+      a[data-anchor-page="ranking_genre"]:has(> div > div:is(.c_serviceColor\.nicoadGold, .c_serviceColor\.nicoadGray)),
+      div:has(> a[data-anchor-page="ranking_custom"] > div > div:is(.c_serviceColor\.nicoadGold, .c_serviceColor\.nicoadGray)) {
         display: none;
       }
     `.trim();
 
     const responsiveCss = `
-
-      @media screen and (max-width: 1350px) {
-        .RankingGenreListContainer {
-          border-right: 0;
-          border-left: 56px solid #fafafa;
-        }
-        .RankingGenreListContainer-categoryHelp {
-          position: static;
-        }
-        .GlobalHeader#siteHeader #siteHeaderInner {
-          width: 1024px;
-        }
-        .RankingHeaderContainer-headerInner {
-          margin-left: 64px;
-          width: 1214px;
-        }
-        .LaneHeader {
-          flex: 1 1 160px;
-          width: 160px;
-        }
-        .LaneHeader+.LaneHeader {
-          /*margin-left: 13px;*/
-        }
-        .LaneHeader>p {
-          white-space: normal;
-          height: 32px;
-          line-height: 16px;
-        }
-        .CustomButton {
-          width: 136px;
-        }
-        .MatrixRanking-body .BaseLayout-block {
-          width: ${1280}px;
-        }
-        .RankingMainContainer-decorateChunk+.RankingMainContainer-decorateChunk,
-         .RankingMainContainer-decorateChunk>*+* {
-           margin-top: 0;
-        }
-        .RankingMainContainer {
-          width: ${1024}px;
-        }
-        .MatrixRanking-body .RankingMatrixVideosRow {
-          width: ${1024 + 64}px;
-          margin-left: ${-64}px;
-        }
-          .RankingMatrixNicoadsRow>*+*,
-          .RankingMatrixVideosRow>:nth-child(n+3) {
-              margin-left: 13px;
-          }
-          .RankingBaseItem {
-            width: 160px;
-            height: 196px;
-          }
-            .RankingBaseItem .Card-link {
-            grid-template-rows: 90px auto;
-            }
-            .VideoItem.RankingBaseItem .VideoThumbnail {
-              border-radius: 3px 3px 0 0;
-            }
-
-            [data-nicoad-grade] .Thumbnail.VideoThumbnail .Thumbnail-image {
-                margin: 3px;
-                background-size: calc(100% + 6px);
-            }
-            [data-nicoad-grade] .Thumbnail.VideoThumbnail:after {
-                width: 40px;
-                height: 40px;
-                background-size: 80px 80px;
-            }
-            .Thumbnail.VideoThumbnail .VideoLength {
-              bottom: 3px;
-              right: 3px;
-            }
-            .VideoThumbnailComment {
-              transform: scale(0.8333);
-            }
-            .RankingBaseItem-meta {
-              position: static;
-              padding: 0 4px 8px;
-            }
-            .VideoItem.RankingBaseItem .VideoItem-metaCount>.VideoMetaCount {
-              white-space: nowrap;
-            }
-        .RankingMainContainer .ToTopButton {
-          transform: translateX(calc(100vw / 2 - 100% - 36px));
-          user-select: none;
-        }
+      [aria-label="nicovideo-content"]:has([data-anchor-page="ranking_custom"]) > section > div {
+        min-width: unset;
       }
     `;
 
@@ -1613,7 +1529,7 @@ AntiPrototypeJs().then(() => {
                   data-config-name="responsive.matrix"
                   data-config-namespace=""
                 >
-                <span>ランキングTOPのサムネイルを画面幅に合わせて小さくする</span>
+                <span>カスタムランキングのサムネイルを画面幅に合わせて小さくする</span>
               </label>
 
               <h2>NG設定(リロード後に反映)</h2>
@@ -1718,53 +1634,85 @@ AntiPrototypeJs().then(() => {
     `).trim();
 
     const __ng_css__ = `
-      /* .item_cell 将棋盤ランキング  .item 従来のランキングと検索 */
+      /* [data-decoration-video-id] ランキング  .item 検索 */
 
-      .VideoItem.NC-VideoCard.is-ng-rejected,
-      .item_cell.is-ng-rejected {
-       opacity: 0;
-       pointer-events: none;
-       visibility: hidden;
-      } 
+      [data-decoration-video-id].is-ng-rejected {
+        pointer-events: none;
 
-      .VideoItem.VideoCard.is-ng-rejected,
-      .item_cell.is-ng-rejected {
-       opacity: 0;
-       pointer-events: none;
-       visibility: hidden;
-      } 
+        > * {
+          display: none;
+        }
 
-      .RankingMainVideo.is-ng-wait,
-      .RankingBaseItem.is-ng-wait,
-      .item_cell.is-ng-wait .item,
+        &::before {
+          background-color: var(--colors-layer-surface-low-em);
+          border-radius: var(--radii-m);
+          box-sizing: content-box;
+
+          @media (prefers-color-scheme: light) {
+            content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w_x6 h_x6 fill_icon.baseDisabled"><path fill="hsl(0 0% 70%)" fill-rule="evenodd" d="M20.21 5.81H14.4l2.38-2.24a.83.83 0 0 0 .05-1.17.8.8 0 0 0-1.16-.04L12 5.81 8.33 2.36a.8.8 0 0 0-1.16.04c-.3.34-.28.86.05 1.17L9.6 5.8H3.8C2.8 5.81 2 6.61 2 7.6v10.7c0 1 .8 1.8 1.79 1.8h2.26l1.35 1.56c.23.26.6.26.82 0l1.35-1.57h4.86l1.35 1.57c.23.26.6.26.82 0l1.35-1.57h2.26c1 0 1.79-.8 1.79-1.78V7.6c0-.99-.8-1.79-1.79-1.79" clip-rule="evenodd"></path></svg>');
+          }
+          @media (prefers-color-scheme: dark) {
+            content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w_x6 h_x6 fill_icon.baseDisabled"><path fill="hsl(0 0% 40%)" fill-rule="evenodd" d="M20.21 5.81H14.4l2.38-2.24a.83.83 0 0 0 .05-1.17.8.8 0 0 0-1.16-.04L12 5.81 8.33 2.36a.8.8 0 0 0-1.16.04c-.3.34-.28.86.05 1.17L9.6 5.8H3.8C2.8 5.81 2 6.61 2 7.6v10.7c0 1 .8 1.8 1.79 1.8h2.26l1.35 1.56c.23.26.6.26.82 0l1.35-1.57h4.86l1.35 1.57c.23.26.6.26.82 0l1.35-1.57h2.26c1 0 1.79-.8 1.79-1.78V7.6c0-.99-.8-1.79-1.79-1.79" clip-rule="evenodd"></path></svg>');
+          }
+        }
+
+        &::after {
+          content: 'Hide by MylistPocket';
+          font-weight: var(--font-weights-bold);
+          font-size: var(--font-sizes-base);
+          color: var(--colors-text-on-layer-low-em);
+        }
+
+        &:is([data-anchor-page="ranking_for-you"], [data-anchor-page="ranking_custom"]) {
+          flex-direction: column;
+          height: 100%;
+
+          div:has(> &) {
+            height: 100%;
+          }
+
+          &::before {
+            width: calc(100%/4);
+            height: calc(100%/4);
+            padding: calc((100% * 5 / 16) / 2) calc((100% * 3 / 4) / 2);
+          }
+        }
+
+        &[data-anchor-page="ranking_genre"] {
+          &:has(.w_thumbnail\\.l)::before {
+            width: var(--sizes-x6);
+            height: var(--sizes-x6);
+            padding: calc((var(--sizes-thumbnail-l) * 9 / 16 - var(--sizes-x6)) / 2) calc((var(--sizes-thumbnail-l) - var(--sizes-x6)) / 2);
+          }
+          &:has(.w_thumbnail\\.2xl)::before {
+            width: var(--sizes-x8);
+            height: var(--sizes-x8);
+            padding: calc((var(--sizes-thumbnail-2xl) * 9 / 16 - var(--sizes-x8)) / 2) calc((var(--sizes-thumbnail-2xl) - var(--sizes-x8)) / 2);
+          }
+        }
+      }
+
+      [data-decoration-video-id].is-ng-wait,
       .item.is-ng-wait {
         outline: 1px dotted rgba(192, 192, 192, 0.8);
       }
 
-      .RankingMainVideo.is-ng-queue,
-      .RankingBaseItem.is-ng-queue,
-      .item_cell.is-ng-queue .item,
+      [data-decoration-video-id].is-ng-queue,
       .item.is-ng-queue {
         outline: 2px dotted rgba(192, 192, 192, 0.8);
       }
 
-      .RankingMainVideo.is-ng-current,
-      .RankingBaseItem.is-ng-current,
-      .item_cell.is-ng-current .item,
+      [data-decoration-video-id].is-ng-current,
       .item.is-ng-current {
         outline: 3px dotted rgba(128, 225, 128, 0.8);
       }
 
-      .RankingMainVideo.is-ng-resolved,
-      .RankingBaseItem.is-ng-resolved,
-      .item_cell.is-ng-resolved .item,
+      [data-decoration-video-id].is-ng-resolved,
       .item.is-ng-resolved {
         outline: 0px solid green;
       }
 
-      .RankingMainVideo.is-ng-favorited,
-      .RankingBaseItem.is-ng-favorited,
-      .item_cell.is-fav-favorited .item,
+      [data-decoration-video-id].is-fav-favorited,
       .item.is-fav-favorited {
         outline: 3px dotted orange;
         outline-offset: 3px;
@@ -1773,8 +1721,13 @@ AntiPrototypeJs().then(() => {
         outline-offset: -3px;
       }
 
-      .RankingBaseItem.is-ng-rejected,
-      .item_cell.is-ng-rejected {
+      [data-decoration-video-id].is-ng-rejected,
+      .item.is-ng-rejected {
+        outline: none;
+      }
+
+      .VideoItem.NC-VideoCard.is-ng-rejected,
+      .VideoItem.VideoCard.is-ng-rejected {
         opacity: 0;
         pointer-events: none;
         visibility: hidden;
@@ -1787,13 +1740,7 @@ AntiPrototypeJs().then(() => {
         color: #666;
       }
 
-      .RankingMainVideo.is-ng-rejected,
-      .item.is-ng-rejected {
-        display: none;
-        opacity: 0;
-        pointer-events: none;
-      }
-
+      .item.is-ng-rejected,
       .NicorepoTimelineItem.is-ng-rejected {
         display: none;
         opacity: 0;
@@ -2189,39 +2136,6 @@ isLoginLegacy: () => {
 		window.open(url, '_blank', 'width=550, height=480, left=100, top50, personalbar=0, toolbar=0, scrollbars=1, sizable=1', 0);
 	},
 	isGinzaWatchUrl: url => /^https?:\/\/www\.nicovideo\.jp\/watch\//.test(url || location.href),
-	getPlayerVer: () => {
-		if (document.getElementById('js-initial-watch-data')) {
-			return 'html5';
-		}
-		if (document.getElementById('watchAPIDataContainer')) {
-			return 'flash';
-		}
-		return 'unknown';
-	},
-	isZenzaPlayableVideo: () => {
-		try {
-			if (nicoUtil.getPlayerVer() === 'html5') {
-				return true;
-			}
-			const watchApiData = JSON.parse(document.querySelector('#watchAPIDataContainer').textContent);
-			const flvInfo = textUtil.parseQuery(
-				decodeURIComponent(watchApiData.flashvars.flvInfo)
-			);
-			const dmcInfo = JSON.parse(
-				decodeURIComponent(watchApiData.flashvars.dmcInfo || '{}')
-			);
-			const videoUrl = flvInfo.url ? flvInfo.url : '';
-			const isDmc = dmcInfo && dmcInfo.time;
-			if (isDmc) {
-				return true;
-			}
-			const isSwf = /\/smile\?s=/.test(videoUrl);
-			const isRtmp = (videoUrl.indexOf('rtmp') === 0);
-			return (isSwf || isRtmp) ? false : true;
-		} catch (e) {
-			return false;
-		}
-	},
 	getNicoHistory: window.decodeURIComponent(document.cookie.replace(/^.*(nicohistory[^;+]).*?/, '')),
 	getMypageVer: () => document.querySelector('#js-initial-userpage-data') ? 'spa' : 'legacy'
 };
@@ -3424,7 +3338,18 @@ class CrossDomainGate extends Emitter {
 	_fetch(url, options) {
 		return this._postMessage({command: 'fetch', params: {url, options}});
 	}
-	async fetch(url, options = {}) {
+	async fetch(resource, options = {}) {
+		let url = resource;
+		if (resource instanceof URL) {
+			url = resource.toString();
+		} else if (resource instanceof Request) {
+			url = resource.url;
+			options.method ??= resource.method;
+			options.headers ??= resource.headers;
+			options.body ??= resource.body;
+			options.credentials ??= resource.credentials;
+			options.signal ??= resource.signal;
+		}
 		const result = await this._fetch(url, options);
 		if (typeof result === 'string' || !result.buffer || !result.init || !result.headers) {
 			return result;
@@ -5126,25 +5051,22 @@ const MylistApiLoader = (() => {
 
     const getNgEnv = async () => {
       if (location.host === 'www.nicovideo.jp' &&
-         (location.pathname.startsWith('/ranking') ||
-          location.pathname.startsWith('/tag')     ||
+         (location.pathname.startsWith('/tag') ||
           location.pathname.startsWith('/search'))
       ) {
-        if (document.querySelector('#MatrixRanking-app')) {
-          await waitForDom('.RankingMatrixVideosRow');
-        }
         return {
-          query:
-            '.item[data-video-id]:not(.is-ng-wait), .item_cell[data-video-id]:not(.is-ng-wait), '+
-            '.VideoItem:not(.is-ng-wait), .RankingMainVideo[data-video-id]:not(.is-ng-wait)',
-          container:
-            Array.from(
-              document.querySelectorAll(
-                '.contentBody .list, .container.column1024-0,'+
-                '.RankingMatrixVideosRow, '+
-                '.RankingMainContainer, .RankingVideoListContainer')
-            ),
+          query: '.item[data-video-id]:not(.is-ng-wait)',
+          container: document.querySelectorAll('.contentBody .videoListInner'),
           subtree: false
+        };
+      }
+      if (location.host === 'www.nicovideo.jp' &&
+          location.pathname.startsWith('/ranking')) {
+        await waitForDom('[data-anchor-page^="ranking_"]');
+        return {
+          query: '[data-anchor-page^="ranking_"][href*="watch/"]:not(.is-ng-wait)',
+          container: document.querySelector('[aria-label="nicovideo-content"]'),
+          subtree: true
         };
       }
       if (location.host === 'www.nicovideo.jp' &&
@@ -5221,17 +5143,19 @@ const MylistApiLoader = (() => {
     const initIntersectionObserver = onInview => {
 
       const onItemInview = item => {
-        let watchId = item.getAttribute('data-id') ||
-          item.getAttribute('data-video-id') ||
-          item.getAttribute('data-watch-id');
+        let watchId = item.dataset.id ||
+          item.dataset.videoId ||
+          item.dataset.watchId ||
+          item.dataset.decorationVideoId;
         const ignore = () => item.classList.add('is-ng-ignore');
         if (!watchId) {
-          const a = item.querySelector('a[href*=\'watch/\']');
+          const a = item instanceof HTMLAnchorElement ? item : item.querySelector('a[href*=\'watch/\']');
           let m;
-          if (!a) { return ignore(); }
-          if (a.hostname !== 'www.nicovideo.jp') { return ignore(); }
-          if ((m = /^\/watch\/([a-z0-9]+)/.exec(a.pathname)) === null) { return ignore(); }
-          watchId = m[1];
+          if (a != null &&
+              a.hostname === 'www.nicovideo.jp' &&
+              (m = /^\/watch\/([a-z0-9]+)/.exec(a.pathname)) !== null) {
+            watchId = m[1];
+          }
         }
 
         if (!watchId) {
@@ -5282,7 +5206,6 @@ const MylistApiLoader = (() => {
       };
       update();
 
-      if (!container) { return; }
       const mutationObserver = new MutationObserver(mutations => {
         for (const record of mutations) {
           const container = record.target;
@@ -5419,8 +5342,7 @@ const MylistApiLoader = (() => {
       if (config.props.nicoad.hide) {
         util.addStyle(nicoadHideCss);
       }
-      if (document.body.classList.contains('MatrixRanking-body') &&
-          config.props.responsive.matrix) {
+      if (config.props.responsive.matrix) {
         util.addStyle(responsiveCss);
       }
 
@@ -5770,7 +5692,7 @@ const workerUtil = (() => {
 							if (status === 'ok') {
 								promises[sessionId].resolve(params.result);
 							} else {
-								promises[sessionId].reject(params.result);
+								promises[sessionId].reject(new Error(params.result));
 							}
 							delete promises[sessionId];
 						}
@@ -5931,6 +5853,7 @@ const workerUtil = (() => {
 			function (self) {
 			let config = {}, PRODUCT, TOKEN, CONSTANT, NAME = decodeURI('${encodeURI(name)}'), bcast = {}, portMap = {};
 			const {Handler, PromiseHandler, Emitter} = (${EmitterInitFunc.toString()})();
+			${options.inject ?? ''}
 			(${func.toString()})(self);
 			//===================================
 			(${messageWrapper.toString()})(self);
@@ -5951,7 +5874,7 @@ const workerUtil = (() => {
 								if (status === 'ok') {
 									promises[sessionId].resolve(params.result);
 								} else {
-									promises[sessionId].reject(params.result);
+									promises[sessionId].reject(new Error(params.result));
 								}
 								delete promises[sessionId];
 							}
