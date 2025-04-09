@@ -32,7 +32,7 @@
 // @exclude        *://ext.nicovideo.jp/thumb_channel/*
 // @grant          none
 // @author         segabito
-// @version        2.6.3-fix-playlist.47
+// @version        2.6.3-fix-playlist.48
 // @run-at         document-body
 // @require        https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js
 // @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaWatch-dev.user.js
@@ -101,7 +101,7 @@ AntiPrototypeJs();
     let {dimport, workerUtil, IndexedDbStorage, Handler, PromiseHandler, Emitter, parseThumbInfo, WatchInfoCacheDb, StoryboardCacheDb, VideoSessionWorker} = window.ZenzaLib;
     START_PAGE_QUERY = decodeURIComponent(START_PAGE_QUERY);
 
-    var VER = '2.6.3-fix-playlist.47';
+    var VER = '2.6.3-fix-playlist.48';
     const ENV = 'DEV';
 
 
@@ -6057,8 +6057,8 @@ class PlayerState extends BaseState {
 			isCommunity: false,
 			isWaybackMode: false,
 			isDebug: config.props.debug,
+			isDomandAvailable: false,
 			isDmcAvailable: false,
-			isDmcPlaying: false,
 			isError: false,
 			isEnded: false,
 			isLoading: false,
@@ -30586,19 +30586,28 @@ class HoverMenu {
 		ZenzaWatch.external.send(watchId, Object.assign({query: this._query}, params));
 	}
 	_overrideWatchLink () {
-		if (!!document.querySelector('.UserPageHeader')) {
+		let userPageIntercept;
+		if (document.querySelector('.UserPageHeader') != null) {
 			console.nicoru('user page');
 			const blockNavigation = e => {
 				if (e.ctrlKey) { return; }
 				e.preventDefault();
 			};
-			uq('body').on('mouseover', e => {
-					const target = e.target;
-					if (target.tagName !== 'A' || !target.closest('.TimelineItem_video')) {
-						return;
-					}
-					target.removeEventListener('click', blockNavigation);
-					target.addEventListener('click', blockNavigation);
+			userPageIntercept = e => {
+				const target = e.target;
+				if (target.tagName !== 'A' || !target.closest('.TimelineItem_video')) {
+					return;
+				}
+				target.removeEventListener('click', blockNavigation);
+				target.addEventListener('click', blockNavigation);
+			}
+		}
+		const requireIntercepts = [];
+		if (location.pathname.startsWith('/ranking')) {
+			console.nicoru('ranking page');
+			requireIntercepts.push(e => {
+				const target = e.target.closest('button');
+				return target != null && this._closest(target) != null;
 			});
 		}
 		const onClick = e => {
@@ -30628,6 +30637,7 @@ class HoverMenu {
 			window.setTimeout(() => ZenzaWatch.emitter.emit('hideHover'), 1500);
 		};
 		uq('body').on('mouseover', e => {
+			userPageIntercept?.(e);
 			const target = this._closest(e.target);
 			if (!target || target.classList.contains('noHoverMenu')) {
 				return;
@@ -30637,6 +30647,9 @@ class HoverMenu {
 				return;
 			}
 			target.removeEventListener('click', onClick);
+			if (requireIntercepts.length > 0 && requireIntercepts.some(f => f(e))) {
+				return;
+			}
 			target.addEventListener('click', onClick);
 		});
 	}

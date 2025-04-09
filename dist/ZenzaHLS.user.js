@@ -22,7 +22,7 @@
 // @exclude        *://dic.nicovideo.jp/p/*
 // @grant          none
 // @author         segabito macmoto
-// @version        0.0.22-kphrx-patch.4
+// @version        0.0.22-kphrx-patch.5
 // @noframes
 // @require        https://cdn.jsdelivr.net/npm/hls.js@latest
 // @run-at         document-start
@@ -1366,8 +1366,12 @@ const workerUtil = (() => {
            * @returns {*}
            */
           async load(context, config, callbacks) {
-            if (!context.frag || !/\.ts/.test(context.url)) {
+            if (!context.frag || !/\.(ts|cmfa|cmfv)/.test(context.url)) {
               window.console.info('unknown context', context.url, context);
+              return super.load(context, config, callbacks);
+            }
+
+            if (/\.cmf(a|v)/.test(context.url)) {
               return super.load(context, config, callbacks);
             }
 
