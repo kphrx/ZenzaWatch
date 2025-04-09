@@ -3903,8 +3903,7 @@ Object.assign(util, textUtil);
       if (config.props.nicoad.hide) {
         util.addStyle(nicoadHideCss);
       }
-      if (document.querySelector('[data-anchor-page="ranking_custom"]') != null &&
-          config.props.responsive.matrix) {
+      if (config.props.responsive.matrix) {
         util.addStyle(responsiveCss);
       }
 
