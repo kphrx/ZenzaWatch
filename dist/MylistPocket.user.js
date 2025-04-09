@@ -26,7 +26,7 @@
 // @exclude     *://dic.nicovideo.jp/p/*
 // @exclude     *://ext.nicovideo.jp/thumb/*
 // @exclude     *://ext.nicovideo.jp/thumb_channel/*
-// @version     0.5.15-fix-mylist-api.8
+// @version     0.5.15-fix-mylist-api.9
 // @grant       none
 // @author      segabito macmoto
 // @license     public domain
@@ -495,9 +495,9 @@ AntiPrototypeJs().then(() => {
       .nicoadVideoItemWrapper {
         display: none;
       }
-      div:has(> div > div > div > div > a[data-anchor-page="ranking_for-you"] > div > div:is(.c_serviceColor\.nicoadGold, .c_serviceColor\.nicoadGray)),
-      a[data-anchor-page="ranking_genre"]:has(> div > div:is(.c_serviceColor\.nicoadGold, .c_serviceColor\.nicoadGray)),
-      div:has(> a[data-anchor-page="ranking_custom"] > div > div:is(.c_serviceColor\.nicoadGold, .c_serviceColor\.nicoadGray)) {
+      div:has(> div > div > div > div > a[data-anchor-page="ranking_for-you"] > div > div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)),
+      a[data-anchor-page="ranking_genre"]:has(> div > div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)),
+      div:has(> a[data-anchor-page="ranking_custom"] > div > div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)) {
         display: none;
       }
     `.trim();
