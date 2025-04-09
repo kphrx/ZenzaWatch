@@ -1620,53 +1620,85 @@ AntiPrototypeJs().then(() => {
     `).trim();
 
     const __ng_css__ = `
-      /* .item_cell 将棋盤ランキング  .item 従来のランキングと検索 */
+      /* [data-decoration-video-id] ランキング  .item 検索 */
 
-      .VideoItem.NC-VideoCard.is-ng-rejected,
-      .item_cell.is-ng-rejected {
-       opacity: 0;
-       pointer-events: none;
-       visibility: hidden;
-      } 
+      [data-decoration-video-id].is-ng-rejected {
+        pointer-events: none;
 
-      .VideoItem.VideoCard.is-ng-rejected,
-      .item_cell.is-ng-rejected {
-       opacity: 0;
-       pointer-events: none;
-       visibility: hidden;
-      } 
+        > * {
+          display: none;
+        }
 
-      .RankingMainVideo.is-ng-wait,
-      .RankingBaseItem.is-ng-wait,
-      .item_cell.is-ng-wait .item,
+        &::before {
+          background-color: var(--colors-layer-surface-low-em);
+          border-radius: var(--radii-m);
+          box-sizing: content-box;
+
+          @media (prefers-color-scheme: light) {
+            content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w_x6 h_x6 fill_icon.baseDisabled"><path fill="hsl(0 0% 70%)" fill-rule="evenodd" d="M20.21 5.81H14.4l2.38-2.24a.83.83 0 0 0 .05-1.17.8.8 0 0 0-1.16-.04L12 5.81 8.33 2.36a.8.8 0 0 0-1.16.04c-.3.34-.28.86.05 1.17L9.6 5.8H3.8C2.8 5.81 2 6.61 2 7.6v10.7c0 1 .8 1.8 1.79 1.8h2.26l1.35 1.56c.23.26.6.26.82 0l1.35-1.57h4.86l1.35 1.57c.23.26.6.26.82 0l1.35-1.57h2.26c1 0 1.79-.8 1.79-1.78V7.6c0-.99-.8-1.79-1.79-1.79" clip-rule="evenodd"></path></svg>');
+          }
+          @media (prefers-color-scheme: dark) {
+            content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w_x6 h_x6 fill_icon.baseDisabled"><path fill="hsl(0 0% 40%)" fill-rule="evenodd" d="M20.21 5.81H14.4l2.38-2.24a.83.83 0 0 0 .05-1.17.8.8 0 0 0-1.16-.04L12 5.81 8.33 2.36a.8.8 0 0 0-1.16.04c-.3.34-.28.86.05 1.17L9.6 5.8H3.8C2.8 5.81 2 6.61 2 7.6v10.7c0 1 .8 1.8 1.79 1.8h2.26l1.35 1.56c.23.26.6.26.82 0l1.35-1.57h4.86l1.35 1.57c.23.26.6.26.82 0l1.35-1.57h2.26c1 0 1.79-.8 1.79-1.78V7.6c0-.99-.8-1.79-1.79-1.79" clip-rule="evenodd"></path></svg>');
+          }
+        }
+
+        &::after {
+          content: 'Hide by MylistPocket';
+          font-weight: var(--font-weights-bold);
+          font-size: var(--font-sizes-base);
+          color: var(--colors-text-on-layer-low-em);
+        }
+
+        &:is([data-anchor-page="ranking_for-you"], [data-anchor-page="ranking_custom"]) {
+          flex-direction: column;
+          height: 100%;
+
+          div:has(> &) {
+            height: 100%;
+          }
+
+          &::before {
+            width: calc(100%/4);
+            height: calc(100%/4);
+            padding: calc((100% * 5 / 16) / 2) calc((100% * 3 / 4) / 2);
+          }
+        }
+
+        &[data-anchor-page="ranking_genre"] {
+          &:has(.w_thumbnail\\.l)::before {
+            width: var(--sizes-x6);
+            height: var(--sizes-x6);
+            padding: calc((var(--sizes-thumbnail-l) * 9 / 16 - var(--sizes-x6)) / 2) calc((var(--sizes-thumbnail-l) - var(--sizes-x6)) / 2);
+          }
+          &:has(.w_thumbnail\\.2xl)::before {
+            width: var(--sizes-x8);
+            height: var(--sizes-x8);
+            padding: calc((var(--sizes-thumbnail-2xl) * 9 / 16 - var(--sizes-x8)) / 2) calc((var(--sizes-thumbnail-2xl) - var(--sizes-x8)) / 2);
+          }
+        }
+      }
+
+      [data-decoration-video-id].is-ng-wait,
       .item.is-ng-wait {
         outline: 1px dotted rgba(192, 192, 192, 0.8);
       }
 
-      .RankingMainVideo.is-ng-queue,
-      .RankingBaseItem.is-ng-queue,
-      .item_cell.is-ng-queue .item,
+      [data-decoration-video-id].is-ng-queue,
       .item.is-ng-queue {
         outline: 2px dotted rgba(192, 192, 192, 0.8);
       }
 
-      .RankingMainVideo.is-ng-current,
-      .RankingBaseItem.is-ng-current,
-      .item_cell.is-ng-current .item,
+      [data-decoration-video-id].is-ng-current,
       .item.is-ng-current {
         outline: 3px dotted rgba(128, 225, 128, 0.8);
       }
 
-      .RankingMainVideo.is-ng-resolved,
-      .RankingBaseItem.is-ng-resolved,
-      .item_cell.is-ng-resolved .item,
+      [data-decoration-video-id].is-ng-resolved,
       .item.is-ng-resolved {
         outline: 0px solid green;
       }
 
-      .RankingMainVideo.is-ng-favorited,
-      .RankingBaseItem.is-ng-favorited,
-      .item_cell.is-fav-favorited .item,
+      [data-decoration-video-id].is-fav-favorited,
       .item.is-fav-favorited {
         outline: 3px dotted orange;
         outline-offset: 3px;
@@ -1675,8 +1707,13 @@ AntiPrototypeJs().then(() => {
         outline-offset: -3px;
       }
 
-      .RankingBaseItem.is-ng-rejected,
-      .item_cell.is-ng-rejected {
+      [data-decoration-video-id].is-ng-rejected,
+      .item.is-ng-rejected {
+        outline: none;
+      }
+
+      .VideoItem.NC-VideoCard.is-ng-rejected,
+      .VideoItem.VideoCard.is-ng-rejected {
         opacity: 0;
         pointer-events: none;
         visibility: hidden;
@@ -1689,13 +1726,7 @@ AntiPrototypeJs().then(() => {
         color: #666;
       }
 
-      .RankingMainVideo.is-ng-rejected,
-      .item.is-ng-rejected {
-        display: none;
-        opacity: 0;
-        pointer-events: none;
-      }
-
+      .item.is-ng-rejected,
       .NicorepoTimelineItem.is-ng-rejected {
         display: none;
         opacity: 0;
