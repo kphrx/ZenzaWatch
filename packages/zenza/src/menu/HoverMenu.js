@@ -133,21 +133,30 @@ class HoverMenu {
     ZenzaWatch.external.send(watchId, Object.assign({query: this._query}, params));
   }
   _overrideWatchLink () {
-    if (!!document.querySelector('.UserPageHeader')) {
+    let userPageIntercept;
+    if (document.querySelector('.UserPageHeader') != null) {
       console.nicoru('user page');
       const blockNavigation = e => {
         if (e.ctrlKey) { return; }
         e.preventDefault();
         // e.stopPropagation();
       };
-      uq('body').on('mouseover', e => {
-          const target = e.target;
-          if (target.tagName !== 'A' || !target.closest('.TimelineItem_video')) {
-            return;
-          }
-          // console.nicoru('mouseover', target.tagName);
-          target.removeEventListener('click', blockNavigation);
-          target.addEventListener('click', blockNavigation);
+      userPageIntercept = e => {
+        const target = e.target;
+        if (target.tagName !== 'A' || !target.closest('.TimelineItem_video')) {
+          return;
+        }
+        // console.nicoru('mouseover', target.tagName);
+        target.removeEventListener('click', blockNavigation);
+        target.addEventListener('click', blockNavigation);
+      }
+    }
+    const requireIntercepts = [];
+    if (location.pathname.startsWith('/ranking')) {
+      console.nicoru('ranking page');
+      requireIntercepts.push(e => {
+        const target = e.target.closest('button');
+        return target != null && this._closest(target) != null;
       });
     }
     const onClick = e => {
@@ -183,6 +192,7 @@ class HoverMenu {
       window.setTimeout(() => ZenzaWatch.emitter.emit('hideHover'), 1500);
     };
     uq('body').on('mouseover', e => {
+      userPageIntercept?.(e);
       const target = this._closest(e.target);
       if (!target || target.classList.contains('noHoverMenu')) {
         return;
@@ -192,6 +202,9 @@ class HoverMenu {
         return;
       }
       target.removeEventListener('click', onClick);
+      if (requireIntercepts.length > 0 && requireIntercepts.some(f => f(e))) {
+        return;
+      }
       target.addEventListener('click', onClick);
     });
   }
