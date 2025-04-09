@@ -3707,9 +3707,10 @@ Object.assign(util, textUtil);
     const initIntersectionObserver = onInview => {
 
       const onItemInview = item => {
-        let watchId = item.getAttribute('data-id') ||
-          item.getAttribute('data-video-id') ||
-          item.getAttribute('data-watch-id');
+        let watchId = item.dataset.id ||
+          item.dataset.videoId ||
+          item.dataset.watchId ||
+          item.dataset.decorationVideoId;
         const ignore = () => item.classList.add('is-ng-ignore');
         if (!watchId) {
           const a = item.querySelector('a[href*=\'watch/\']');
