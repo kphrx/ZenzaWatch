@@ -801,8 +801,12 @@ AntiPrototypeJs().then(() => {
            * @returns {*}
            */
           async load(context, config, callbacks) {
-            if (!context.frag || !/\.ts/.test(context.url)) {
+            if (!context.frag || !/\.(ts|cmfa|cmfv)/.test(context.url)) {
               window.console.info('unknown context', context.url, context);
+              return super.load(context, config, callbacks);
+            }
+
+            if (/\.cmf(a|v)/.test(context.url)) {
               return super.load(context, config, callbacks);
             }
 
