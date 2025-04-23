@@ -481,10 +481,11 @@ AntiPrototypeJs().then(() => {
       .nicoadVideoItemWrapper {
         display: none;
       }
-      div:has(> div > div > div > div > a[data-anchor-page="ranking_for-you"] > div > div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)),
-      a[data-anchor-page="ranking_genre"]:has(> div > div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)),
-      div:has(> a[data-anchor-page="ranking_custom"] > div > div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)) {
-        display: none;
+      [aria-label="nicovideo-content"] > section > div:nth-of-type(2) {
+        > div:has(a:is([data-anchor-page="ranking_for-you"], [data-anchor-page="ranking_custom"]) div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)),
+        > div > div:first-of-type > div:nth-of-type(2) > div:has(a[data-anchor-page="ranking_genre"] div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)) {
+          display: none;
+        }
       }
     `.trim();
 
