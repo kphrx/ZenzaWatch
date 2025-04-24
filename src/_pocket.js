@@ -3943,7 +3943,7 @@ Object.assign(util, textUtil);
       });
       MylistPocket.debug.hoverMenu = hoverMenu;
 
-      const ngConfig = initNg();
+      const ngConfig = await initNg();
 
       if (config.props.nicoad.hide) {
         util.addStyle(nicoadHideCss);
