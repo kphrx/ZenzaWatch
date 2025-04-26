@@ -3662,7 +3662,7 @@ Object.assign(util, textUtil);
       ) {
         return {
           query: '.item[data-video-id]:not(.is-ng-wait)',
-          container: document.querySelectorAll('.contentBody .videoListInner'),
+          container: Array.from(document.querySelectorAll('.contentBody .videoListInner')),
           subtree: false
         };
       }
