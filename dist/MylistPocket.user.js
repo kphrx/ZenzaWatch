@@ -26,7 +26,7 @@
 // @exclude     *://dic.nicovideo.jp/p/*
 // @exclude     *://ext.nicovideo.jp/thumb/*
 // @exclude     *://ext.nicovideo.jp/thumb_channel/*
-// @version     0.5.15-fix-mylist-api.9
+// @version     0.5.15-fix-mylist-api.10
 // @grant       none
 // @author      segabito macmoto
 // @license     public domain
@@ -495,10 +495,13 @@ AntiPrototypeJs().then(() => {
       .nicoadVideoItemWrapper {
         display: none;
       }
-      div:has(> div > div > div > div > a[data-anchor-page="ranking_for-you"] > div > div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)),
-      a[data-anchor-page="ranking_genre"]:has(> div > div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)),
-      div:has(> a[data-anchor-page="ranking_custom"] > div > div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)) {
-        display: none;
+      [aria-label="nicovideo-content"] > section > div:nth-of-type(2) {
+        > div:has(a[data-anchor-page="ranking_for-you"], a[data-anchor-page="ranking_custom"]),
+        > div > div:first-of-type > div:nth-of-type(2) > div:has(a[data-anchor-page="ranking_genre"]) {
+          &:has(div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)) {
+            display: none;
+          }
+        }
       }
     `.trim();
 
@@ -506,7 +509,18 @@ AntiPrototypeJs().then(() => {
       [aria-label="nicovideo-content"]:has([data-anchor-page="ranking_custom"]) > section > div {
         min-width: unset;
       }
-    `;
+    `.trim();
+
+    const hideTagCss = (tagName) => `
+      [aria-label="nicovideo-content"] > section > div:nth-of-type(2) {
+        > section:has(a[data-anchor-page="ranking_for-you"]),
+        > div > div:last-of-type > div:first-of-type:has(a[data-anchor-page="ranking_genre"]) {
+          &:has(a[data-anchor-href^="/ranking/genre/"][data-anchor-href$="?tag=${encodeURIComponent(tagName.trim())}"]) > div:nth-of-type(2) {
+            display: none;
+          }
+        }
+      }
+    `.trim();
 
     const __tpl__ = (`
       <div class="mylistPocketHoverMenu scalingUI zen-family">
@@ -5056,7 +5070,7 @@ const MylistApiLoader = (() => {
       ) {
         return {
           query: '.item[data-video-id]:not(.is-ng-wait)',
-          container: document.querySelectorAll('.contentBody .videoListInner'),
+          container: Array.from(document.querySelectorAll('.contentBody .videoListInner')),
           subtree: false
         };
       }
@@ -5306,7 +5320,7 @@ const MylistApiLoader = (() => {
 
       initNgDom({intersectionObserver, query, container, closest, subtree});
 
-      return intersectionObserver;
+      return ngConfig;
     };
 
     const init = async () => {
@@ -5337,13 +5351,19 @@ const MylistApiLoader = (() => {
       });
       MylistPocket.debug.hoverMenu = hoverMenu;
 
-      initNg();
+      const ngConfig = await initNg();
 
       if (config.props.nicoad.hide) {
         util.addStyle(nicoadHideCss);
       }
-      if (config.props.responsive.matrix) {
-        util.addStyle(responsiveCss);
+
+      if (document.querySelector('a[data-anchor-page^="ranking_"]') != null) {
+        for (const tagName of ngConfig.props.tag.trim().split(/[\r\n]/)) {
+          util.addStyle(hideTagCss(tagName));
+        }
+        if (config.props.responsive.matrix) {
+          util.addStyle(responsiveCss);
+        }
       }
 
       initExternal(dispatcher, hoverMenu, infoView);
