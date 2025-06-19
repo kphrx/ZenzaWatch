@@ -482,8 +482,9 @@ AntiPrototypeJs().then(() => {
         display: none;
       }
       [aria-label="nicovideo-content"] > section > div:nth-of-type(2) {
-        > div:has(a[data-anchor-page="ranking_for-you"], a[data-anchor-page="ranking_custom"]),
-        > div > div:first-of-type > div:nth-of-type(2) > div:has(a[data-anchor-page="ranking_genre"]) {
+        > div:has(a[data-anchor-page="ranking_for-you"]),
+        > div > div:first-of-type > div:nth-of-type(2) > div:has(a[data-anchor-page="ranking_genre"]),
+        > div > div:has(a[data-anchor-page="ranking_custom"]) {
           &:has(div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)) {
             display: none;
           }
