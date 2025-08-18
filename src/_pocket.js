@@ -1683,7 +1683,7 @@ AntiPrototypeJs().then(() => {
           }
         }
 
-        &:is([data-anchor-page="ranking_genre"], .gap_base[data-anchor-page="tag"], .gap_base[data-anchor-page="search"]) {
+        &:is([data-anchor-page="ranking_genre"], [data-anchor-page="tag"]:not(.cq-t_inline-size), [data-anchor-page="search"]:not(.cq-t_inline-size)) {
           &:has(.w_thumbnail\\.l)::before {
             width: var(--sizes-x6);
             height: var(--sizes-x6);
