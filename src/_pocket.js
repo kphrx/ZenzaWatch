@@ -1668,7 +1668,7 @@ AntiPrototypeJs().then(() => {
           color: var(--colors-text-on-layer-low-em);
         }
 
-        &:is([data-anchor-page="ranking_for-you"], [data-anchor-page="ranking_custom"]) {
+        &:is([data-anchor-page="ranking_for-you"], [data-anchor-page="ranking_custom"], .cq-t_inline-size[data-anchor-page="tag"], .cq-t_inline-size[data-anchor-page="search"]) {
           flex-direction: column;
           height: 100%;
 
@@ -1683,7 +1683,7 @@ AntiPrototypeJs().then(() => {
           }
         }
 
-        &:is([data-anchor-page="ranking_genre"], [data-anchor-page="tag"], [data-anchor-page="search"]) {
+        &:is([data-anchor-page="ranking_genre"], .gap_base[data-anchor-page="tag"], .gap_base[data-anchor-page="search"]) {
           &:has(.w_thumbnail\\.l)::before {
             width: var(--sizes-x6);
             height: var(--sizes-x6);
