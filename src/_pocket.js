@@ -1637,7 +1637,7 @@ AntiPrototypeJs().then(() => {
     const __ng_css__ = `
       /* [data-decoration-video-id] ランキング  .item 検索 */
 
-      [data-decoration-video-id].is-ng-rejected {
+      [data-decoration-video-id]:has(.is-ng-rejected) {
         pointer-events: none;
 
         > * {
@@ -1693,27 +1693,27 @@ AntiPrototypeJs().then(() => {
         }
       }
 
-      [data-decoration-video-id].is-ng-wait,
+      [data-decoration-video-id]:has(.is-ng-wait),
       .item.is-ng-wait {
         outline: 1px dotted rgba(192, 192, 192, 0.8);
       }
 
-      [data-decoration-video-id].is-ng-queue,
+      [data-decoration-video-id]:has(.is-ng-queue),
       .item.is-ng-queue {
         outline: 2px dotted rgba(192, 192, 192, 0.8);
       }
 
-      [data-decoration-video-id].is-ng-current,
+      [data-decoration-video-id]:has(.is-ng-current),
       .item.is-ng-current {
         outline: 3px dotted rgba(128, 225, 128, 0.8);
       }
 
-      [data-decoration-video-id].is-ng-resolved,
+      [data-decoration-video-id]:has(.is-ng-resolved),
       .item.is-ng-resolved {
         outline: 0px solid green;
       }
 
-      [data-decoration-video-id].is-fav-favorited,
+      [data-decoration-video-id]:has(.is-fav-favorited),
       .item.is-fav-favorited {
         outline: 3px dotted orange;
         outline-offset: 3px;
@@ -1722,7 +1722,7 @@ AntiPrototypeJs().then(() => {
         outline-offset: -3px;
       }
 
-      [data-decoration-video-id].is-ng-rejected,
+      [data-decoration-video-id]:has(.is-ng-rejected),
       .item.is-ng-rejected {
         outline: none;
       }
