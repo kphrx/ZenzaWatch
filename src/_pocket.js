@@ -478,8 +478,12 @@ AntiPrototypeJs().then(() => {
     `).trim();
 
     const nicoadHideCss = `
-      .nicoadVideoItemWrapper {
-        display: none;
+      [aria-label="nicovideo-content"] > div > div:nth-of-type(2) > div:nth-of-type(2) > div:first-of-type {
+        a[data-anchor-page="tag"], a[data-anchor-page="search"] {
+          &:has(div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)) {
+            display: none;
+          }
+        }
       }
       [aria-label="nicovideo-content"] > section > div:nth-of-type(2) {
         > div:has(a[data-anchor-page="ranking_for-you"]),
@@ -1679,7 +1683,7 @@ AntiPrototypeJs().then(() => {
           }
         }
 
-        &[data-anchor-page="ranking_genre"] {
+        &:is([data-anchor-page="ranking_genre"], [data-anchor-page="tag"], [data-anchor-page="search"]) {
           &:has(.w_thumbnail\\.l)::before {
             width: var(--sizes-x6);
             height: var(--sizes-x6);
@@ -3661,10 +3665,11 @@ Object.assign(util, textUtil);
          (location.pathname.startsWith('/tag') ||
           location.pathname.startsWith('/search'))
       ) {
+        await waitForDom('[data-anchor-page="tag"],[data-anchor-page="search"]');
         return {
-          query: '.item[data-video-id]:not(.is-ng-wait)',
-          container: Array.from(document.querySelectorAll('.contentBody .videoListInner')),
-          subtree: false
+          query: '[href*="watch/"]:is([data-anchor-page="tag"],[data-anchor-page="search"]):not(.is-ng-wait)',
+          container: document.querySelector('[aria-label="nicovideo-content"]'),
+          subtree: true
         };
       }
       if (location.host === 'www.nicovideo.jp' &&
