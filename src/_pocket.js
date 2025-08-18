@@ -478,8 +478,12 @@ AntiPrototypeJs().then(() => {
     `).trim();
 
     const nicoadHideCss = `
-      .nicoadVideoItemWrapper {
-        display: none;
+      [aria-label="nicovideo-content"] > div > div:nth-of-type(2) > div:nth-of-type(2) > div:first-of-type {
+        a[data-anchor-page="tag"], a[data-anchor-page="search"] {
+          &:has(div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)) {
+            display: none;
+          }
+        }
       }
       [aria-label="nicovideo-content"] > section > div:nth-of-type(2) {
         > div:has(a[data-anchor-page="ranking_for-you"]),
@@ -1664,7 +1668,7 @@ AntiPrototypeJs().then(() => {
           color: var(--colors-text-on-layer-low-em);
         }
 
-        &:is([data-anchor-page="ranking_for-you"], [data-anchor-page="ranking_custom"]) {
+        &:is([data-anchor-page="ranking_for-you"], [data-anchor-page="ranking_custom"], .cq-t_inline-size[data-anchor-page="tag"], .cq-t_inline-size[data-anchor-page="search"]) {
           flex-direction: column;
           height: 100%;
 
@@ -1679,7 +1683,7 @@ AntiPrototypeJs().then(() => {
           }
         }
 
-        &[data-anchor-page="ranking_genre"] {
+        &:is([data-anchor-page="ranking_genre"], .gap_base[data-anchor-page="tag"], .gap_base[data-anchor-page="search"]) {
           &:has(.w_thumbnail\\.l)::before {
             width: var(--sizes-x6);
             height: var(--sizes-x6);
@@ -3441,10 +3445,11 @@ const emitter = util.emitter;
          (location.pathname.startsWith('/tag') ||
           location.pathname.startsWith('/search'))
       ) {
+        await waitForDom('[data-anchor-page="tag"],[data-anchor-page="search"]');
         return {
-          query: '.item[data-video-id]:not(.is-ng-wait)',
-          container: Array.from(document.querySelectorAll('.contentBody .videoListInner')),
-          subtree: false
+          query: '[href*="watch/"]:is([data-anchor-page="tag"],[data-anchor-page="search"]):not(.is-ng-wait)',
+          container: document.querySelector('[aria-label="nicovideo-content"]'),
+          subtree: true
         };
       }
       if (location.host === 'www.nicovideo.jp' &&
