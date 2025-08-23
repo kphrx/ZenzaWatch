@@ -32,7 +32,7 @@
 // @exclude        *://ext.nicovideo.jp/thumb_channel/*
 // @grant          none
 // @author         segabito
-// @version        2.6.3-fix-playlist.48
+// @version        2.6.3-fix-playlist.49
 // @run-at         document-body
 // @require        https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js
 // @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaWatch-dev.user.js
@@ -101,7 +101,7 @@ AntiPrototypeJs();
     let {dimport, workerUtil, IndexedDbStorage, Handler, PromiseHandler, Emitter, parseThumbInfo, WatchInfoCacheDb, StoryboardCacheDb, VideoSessionWorker} = window.ZenzaLib;
     START_PAGE_QUERY = decodeURIComponent(START_PAGE_QUERY);
 
-    var VER = '2.6.3-fix-playlist.48';
+    var VER = '2.6.3-fix-playlist.49';
     const ENV = 'DEV';
 
 
@@ -6294,6 +6294,7 @@ const VideoInfoLoader = (function () {
 			},
 			series,
 			tag: {
+				edit: tagEdit,
 				items: tags,
 			},
 			video: {
@@ -6432,6 +6433,7 @@ const VideoInfoLoader = (function () {
 				mylistCount,
 				viewCount,
 				tagList,
+				tagEdit,
 			},
 			viewerInfo,
 			channelInfo,
@@ -7686,6 +7688,9 @@ class VideoInfoModel extends JSONable {
 	get tagList() {
 		return this._videoDetail.tagList;
 	}
+	get tagEdit() {
+		return this._videoDetail.tagEdit;
+	}
 	getVideoId() { // sm12345
 		return this.videoId;
 	}
@@ -8373,12 +8378,19 @@ const {NicoSearchApiV2Query, NicoSearchApiV2Loader} =
 		return {NicoSearchApiV2Query, NicoSearchApiV2Loader};
 	})();
 class TagEditApi {
-	load(videoId) {
-		const url = `https://nvapi.nicovideo.jp/v1/videos/${videoId}/tags?_language=ja-jp`;
+	load(videoId, editKey) {
+		const url = `https://nvapi.nicovideo.jp/v2/videos/${videoId}/tags`;
 		const options = {
 			method: 'GET',
 			credentials: 'include',
-				headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Frontend-Id': 6, 'X-Frontend-Version': 0, 'X-Request-With': 'https://www.nicovideo.jp' }
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+					'X-Frontend-Id': 6,
+					'X-Frontend-Version': 0,
+					'X-Request-With': 'https://www.nicovideo.jp',
+					'X-Niconico-Language': 'ja-jp',
+					'X-Tag-Edit-Key': editKey,
+				}
 		};
 		return this._fetch(url, options).then(result => {
 			return result.data;
@@ -8386,9 +8398,9 @@ class TagEditApi {
 			throw new Error('タグ一覧の取得失敗', {result, status: 'fail'});
 		});
 	}
-	async add({videoId, tag, csrfToken, watchAuthKey, ownerLock = 0}) {
+	async add({videoId, tag, csrfToken, editKey, ownerLock = 0}) {
 		const encodedTag = encodeURIComponent(tag);
-		const url = `https://nvapi.nicovideo.jp/v1/videos/${videoId}/tags?_language=ja-jp&tag=${encodedTag}`;
+		const url = `https://nvapi.nicovideo.jp/v2/videos/${videoId}/tags?tag=${encodedTag}`;
 /*
 		const body = this._buildQuery({
 			cmd: 'add',
@@ -8403,7 +8415,14 @@ class TagEditApi {
 		const options = {
 			method: 'POST',
 			credentials: 'include',
-				headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Frontend-Id': 6, 'X-Frontend-Version': 0, 'X-Request-With': 'https://www.nicovideo.jp' }
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+					'X-Frontend-Id': 6,
+					'X-Frontend-Version': 0,
+					'X-Request-With': 'https://www.nicovideo.jp',
+					'X-Niconico-Language': 'ja-jp',
+					'X-Tag-Edit-Key': editKey,
+				}
 		};
 		return await this._fetch(url, options).then(result => {
 			return result.data;
@@ -8411,9 +8430,9 @@ class TagEditApi {
 			throw new Error('タグの追加失敗', {result, status: 'fail'});
 		});
 	}
-	async remove({videoId, tag = '', id, csrfToken, watchAuthKey, ownerLock = 0}) {
+	async remove({videoId, tag = '', id, csrfToken, editKey, ownerLock = 0}) {
 		const encodedTag = encodeURIComponent(tag);
-		const url = `https://nvapi.nicovideo.jp/v1/videos/${videoId}/tags?_language=ja-jp&tag=${encodedTag}`;
+		const url = `https://nvapi.nicovideo.jp/v2/videos/${videoId}/tags?tag=${encodedTag}`;
 /*
 		const body = this._buildQuery({
 			cmd: 'remove',
@@ -8428,7 +8447,14 @@ class TagEditApi {
 		const options = {
 			method: 'DELETE',
 			credentials: 'include',
-				headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Frontend-Id': 6, 'X-Frontend-Version': 0, 'X-Request-With': 'https://www.nicovideo.jp' }
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+					'X-Frontend-Id': 6,
+					'X-Frontend-Version': 0,
+					'X-Request-With': 'https://www.nicovideo.jp',
+					'X-Niconico-Language': 'ja-jp',
+					'X-Tag-Edit-Key': editKey,
+				}
 		};
 		return await this._fetch(url, options).then(result => {
 			return result.data;
@@ -27128,7 +27154,7 @@ class TagListView extends BaseViewComponent {
 		}
 		super._onCommand('playlistSetSearchVideo', {word, option});
 	}
-	update({tagList = [], watchId = null, videoId = null, token = null, watchAuthKey = null}) {
+	update({tagList = [], watchId = null, videoId = null, token = null, tagEdit = null}) {
 		if (watchId) {
 			this._watchId = watchId;
 		}
@@ -27138,8 +27164,8 @@ class TagListView extends BaseViewComponent {
 		if (token) {
 			this._token = token;
 		}
-		if (watchAuthKey) {
-			this._watchAuthKey = watchAuthKey;
+		if (tagEdit) {
+			this._tagEdit = tagEdit;
 		}
 		this.setState({
 			isInputing: false,
@@ -27194,13 +27220,13 @@ class TagListView extends BaseViewComponent {
 		const watchId = this._watchId;
 		const videoId = this._videoId;
 		const csrfToken = this._token;
-		const watchAuthKey = this._watchAuthKey;
+		const editKey = this._tagEdit?.editKey;
 		const addTag = () => {
 			return this._tagEditApi.add({
 				videoId,
 				tag,
 				csrfToken,
-				watchAuthKey
+				editKey
 			});
 		};
 		return Promise.all([addTag(), wait3s]).then(results => {
@@ -27223,14 +27249,14 @@ class TagListView extends BaseViewComponent {
 		const watchId = this._watchId;
 		const videoId = this._videoId;
 		const csrfToken = this._token;
-		const watchAuthKey = this._watchAuthKey;
+		const editKey = this._tagEdit?.editKey;
 		const removeTag = () => {
 			return this._tagEditApi.remove({
 				videoId,
 				tag,
 				id: tagId,
 				csrfToken,
-				watchAuthKey
+				editKey
 			});
 		};
 		return Promise.all([removeTag(), wait3s]).then((results) => {
@@ -27252,7 +27278,7 @@ class TagListView extends BaseViewComponent {
 		const watchId = this._watchId;
 		const wait1s = this._makeWait(1000);
 		const load = () => {
-			return this._tagEditApi.load(this._videoId);
+			return this._tagEditApi.load(this._videoId, this._tagEdit.editKey);
 		};
 		return Promise.all([load(), wait1s]).then((results) => {
 			let result = results[0];
@@ -27947,7 +27973,7 @@ class VideoInfoPanel extends Emitter {
 			watchId: videoInfo.watchId,
 			videoId: videoInfo.videoId,
 			token: videoInfo.csrfToken,
-			watchAuthKey: videoInfo.watchAuthKey
+			tagEdit: videoInfo.tagEdit,
 		});
 		this._seriesList.textContent = '';
 		if (videoInfo.series) {
@@ -28939,7 +28965,7 @@ class VideoHeaderPanel extends Emitter {
 			watchId,
 			videoId: videoInfo.videoId,
 			token: videoInfo.csrfToken,
-			watchAuthKey: videoInfo.watchAuthKey
+			tagEdit: videoInfo.tagEdit,
 		});
 		this._relatedInfoMenu.update(videoInfo);
 		const classList = this.classList;
