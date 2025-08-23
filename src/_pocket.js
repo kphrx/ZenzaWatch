@@ -1683,7 +1683,7 @@ AntiPrototypeJs().then(() => {
           }
         }
 
-        &:is([data-anchor-page="ranking_genre"], .gap_base[data-anchor-page="tag"], .gap_base[data-anchor-page="search"]) {
+        &:is([data-anchor-page="ranking_genre"], [data-anchor-page="tag"]:not(.cq-t_inline-size), [data-anchor-page="search"]:not(.cq-t_inline-size)) {
           &:has(.w_thumbnail\\.l)::before {
             width: var(--sizes-x6);
             height: var(--sizes-x6);
@@ -3443,20 +3443,12 @@ const emitter = util.emitter;
     const getNgEnv = async () => {
       if (location.host === 'www.nicovideo.jp' &&
          (location.pathname.startsWith('/tag') ||
-          location.pathname.startsWith('/search'))
+          location.pathname.startsWith('/search') ||
+          location.pathname.startsWith('/ranking'))
       ) {
-        await waitForDom('[data-anchor-page="tag"],[data-anchor-page="search"]');
+        await waitForDom('[data-anchor-page="tag"],[data-anchor-page="search"],[data-anchor-page^="ranking_"]');
         return {
-          query: '[href*="watch/"]:is([data-anchor-page="tag"],[data-anchor-page="search"]):not(.is-ng-wait)',
-          container: document.querySelector('[aria-label="nicovideo-content"]'),
-          subtree: true
-        };
-      }
-      if (location.host === 'www.nicovideo.jp' &&
-          location.pathname.startsWith('/ranking')) {
-        await waitForDom('[data-anchor-page^="ranking_"]');
-        return {
-          query: '[data-anchor-page^="ranking_"][href*="watch/"]:not(.is-ng-wait)',
+          query: '[href*="watch/"]:is([data-anchor-page="tag"],[data-anchor-page="search"],[data-anchor-page^="ranking_"]):not(.is-ng-wait)',
           container: document.querySelector('[aria-label="nicovideo-content"]'),
           subtree: true
         };

@@ -329,6 +329,10 @@ class VideoInfoModel extends JSONable {
     return this._videoDetail.tagList;
   }
 
+  get tagEdit() {
+    return this._videoDetail.tagEdit;
+  }
+
   getVideoId() { // sm12345
     return this.videoId;
   }

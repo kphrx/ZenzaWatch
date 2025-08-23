@@ -89,7 +89,7 @@ const VideoInfoLoader = (function () {
       // smartphone,
       // system,
       tag: {
-        // edit,
+        edit: tagEdit,
         // hasR18Tag,
         // isPublishedNicoscript,
         items: tags,
@@ -282,6 +282,7 @@ const VideoInfoLoader = (function () {
         viewCount,
 
         tagList,
+        tagEdit,
       },
       viewerInfo,
       channelInfo,
