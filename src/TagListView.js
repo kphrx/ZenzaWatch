@@ -121,7 +121,7 @@ class TagListView extends BaseViewComponent {
     super._onCommand('playlistSetSearchVideo', {word, option});
   }
 
-  update({tagList = [], watchId = null, videoId = null, token = null, watchAuthKey = null}) {
+  update({tagList = [], watchId = null, videoId = null, token = null, tagEdit = null}) {
     if (watchId) {
       this._watchId = watchId;
     }
@@ -131,8 +131,8 @@ class TagListView extends BaseViewComponent {
     if (token) {
       this._token = token;
     }
-    if (watchAuthKey) {
-      this._watchAuthKey = watchAuthKey;
+    if (tagEdit) {
+      this._tagEdit = tagEdit;
     }
 
     this.setState({
@@ -196,13 +196,13 @@ class TagListView extends BaseViewComponent {
     const watchId = this._watchId;
     const videoId = this._videoId;
     const csrfToken = this._token;
-    const watchAuthKey = this._watchAuthKey;
+    const editKey = this._tagEdit?.editKey;
     const addTag = () => {
       return this._tagEditApi.add({
         videoId,
         tag,
         csrfToken,
-        watchAuthKey
+        editKey
       });
     };
 
@@ -229,14 +229,14 @@ class TagListView extends BaseViewComponent {
     const watchId = this._watchId;
     const videoId = this._videoId;
     const csrfToken = this._token;
-    const watchAuthKey = this._watchAuthKey;
+    const editKey = this._tagEdit?.editKey;
     const removeTag = () => {
       return this._tagEditApi.remove({
         videoId,
         tag,
         id: tagId,
         csrfToken,
-        watchAuthKey
+        editKey
       });
     };
 
@@ -261,7 +261,7 @@ class TagListView extends BaseViewComponent {
     const watchId = this._watchId;
     const wait1s = this._makeWait(1000);
     const load = () => {
-      return this._tagEditApi.load(this._videoId);
+      return this._tagEditApi.load(this._videoId, this._tagEdit.editKey);
     };
 
     return Promise.all([load(), wait1s]).then((results) => {
