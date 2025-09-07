@@ -478,6 +478,9 @@ AntiPrototypeJs().then(() => {
     `).trim();
 
     const nicoadHideCss = `
+      .nicoadVideoItemWrapper {
+        display: none;
+      }
       [aria-label="nicovideo-content"] > div > div:nth-of-type(2) > div:nth-of-type(2) > div:first-of-type {
         a[data-anchor-page="tag"], a[data-anchor-page="search"] {
           &:has(div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)) {
@@ -3441,6 +3444,17 @@ const emitter = util.emitter;
     };
 
     const getNgEnv = async () => {
+      if (location.host === 'www.nicovideo.jp' &&
+         (location.pathname.startsWith('/tag') ||
+          location.pathname.startsWith('/search')) &&
+         (await window.cookieStore.get('new_search'))?.value === "false"
+      ) {
+        return {
+          query: '.item[data-video-id]:not(.is-ng-wait)',
+          container: Array.from(document.querySelectorAll('.contentBody .videoListInner')),
+          subtree: false
+        };
+      }
       if (location.host === 'www.nicovideo.jp' &&
          (location.pathname.startsWith('/tag') ||
           location.pathname.startsWith('/search') ||
