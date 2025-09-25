@@ -32,7 +32,7 @@
 // @exclude        *://ext.nicovideo.jp/thumb_channel/*
 // @grant          none
 // @author         segabito
-// @version        2.6.3-fix-playlist.49
+// @version        2.6.3-fix-playlist.50
 // @run-at         document-body
 // @require        https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js
 // @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaWatch-dev.user.js
@@ -101,7 +101,7 @@ AntiPrototypeJs();
     let {dimport, workerUtil, IndexedDbStorage, Handler, PromiseHandler, Emitter, parseThumbInfo, WatchInfoCacheDb, StoryboardCacheDb, VideoSessionWorker} = window.ZenzaLib;
     START_PAGE_QUERY = decodeURIComponent(START_PAGE_QUERY);
 
-    var VER = '2.6.3-fix-playlist.49';
+    var VER = '2.6.3-fix-playlist.50';
     const ENV = 'DEV';
 
 
@@ -30629,8 +30629,8 @@ class HoverMenu {
 			}
 		}
 		const requireIntercepts = [];
-		if (location.pathname.startsWith('/ranking')) {
-			console.nicoru('ranking page');
+		if (location.pathname.startsWith('/ranking') || location.pathname.startsWith('/search') || location.pathname.startsWith('/tag')) {
+			console.nicoru('ranking/search/tag page');
 			requireIntercepts.push(e => {
 				const target = e.target.closest('button');
 				return target != null && this._closest(target) != null;

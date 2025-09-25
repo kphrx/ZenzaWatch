@@ -26,7 +26,7 @@
 // @exclude     *://dic.nicovideo.jp/p/*
 // @exclude     *://ext.nicovideo.jp/thumb/*
 // @exclude     *://ext.nicovideo.jp/thumb_channel/*
-// @version     0.5.15-fix-mylist-api.14
+// @version     0.5.15-fix-mylist-api.15
 // @grant       none
 // @author      segabito macmoto
 // @license     public domain
@@ -492,6 +492,9 @@ AntiPrototypeJs().then(() => {
     `).trim();
 
     const nicoadHideCss = `
+      .nicoadVideoItemWrapper {
+        display: none;
+      }
       [aria-label="nicovideo-content"] > div > div:nth-of-type(2) > div:nth-of-type(2) > div:first-of-type {
         a[data-anchor-page="tag"], a[data-anchor-page="search"] {
           &:has(div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)) {
@@ -5069,6 +5072,17 @@ const MylistApiLoader = (() => {
     };
 
     const getNgEnv = async () => {
+      if (location.host === 'www.nicovideo.jp' &&
+         (location.pathname.startsWith('/tag') ||
+          location.pathname.startsWith('/search')) &&
+         (await window.cookieStore.get('new_search'))?.value === "false"
+      ) {
+        return {
+          query: '.item[data-video-id]:not(.is-ng-wait)',
+          container: Array.from(document.querySelectorAll('.contentBody .videoListInner')),
+          subtree: false
+        };
+      }
       if (location.host === 'www.nicovideo.jp' &&
          (location.pathname.startsWith('/tag') ||
           location.pathname.startsWith('/search') ||
