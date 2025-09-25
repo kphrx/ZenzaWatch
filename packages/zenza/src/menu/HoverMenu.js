@@ -152,8 +152,8 @@ class HoverMenu {
       }
     }
     const requireIntercepts = [];
-    if (location.pathname.startsWith('/ranking')) {
-      console.nicoru('ranking page');
+    if (location.pathname.startsWith('/ranking') || location.pathname.startsWith('/search') || location.pathname.startsWith('/tag')) {
+      console.nicoru('ranking/search/tag page');
       requireIntercepts.push(e => {
         const target = e.target.closest('button');
         return target != null && this._closest(target) != null;
