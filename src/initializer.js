@@ -86,10 +86,33 @@ const {initialize} = (() => {
     });
   };
 
-  const isWatchPage = () => {
-    const res = document.querySelector('meta[name="server-response"]')?.getAttribute('content');
+  const readyContent = () => {
+    if (document.querySelector('[aria-label="nicovideo-content"]') != null) {
+      return Promise.resolve();
+    }
+    const {promise, resolve} = Promise.withResolvers();
+    new MutationObserver((records, observer) => {
+      for (const record of records) {
+        if(record.addedNodes.length === 0 || document.querySelector('[aria-label="nicovideo-content"]') == null) {
+          continue;
+        }
+        resolve();
+        observer.disconnect();
+      }
+    }).observe(document.getElementById('root'), {
+      childList: true,
+    });
+    return promise;
+  }
 
+  const isWatchPage = async () => {
+    if (!util.isGinzaWatchUrl()) {
+      return false;
+    }
+
+    const res = document.querySelector('meta[name="server-response"]')?.getAttribute('content');
     if (res == null) {
+      await readyContent();
       return !!document.querySelector('.grid-area_\\[player\\]');
     }
 
@@ -130,7 +153,7 @@ const {initialize} = (() => {
     const query = textUtil.parseQuery(START_PAGE_QUERY);
 
     await uq.ready(); // DOMContentLoaded
-    const isWatch = util.isGinzaWatchUrl() && isWatchPage();
+    const isWatch = async isWatchPage();
 
     const hoverMenu = global.debug.hoverMenu = new HoverMenu({playerConfig: Config});
 
