@@ -32,7 +32,7 @@
 // @exclude        *://ext.nicovideo.jp/thumb_channel/*
 // @grant          none
 // @author         segabito
-// @version        2.6.3-fix-playlist.50
+// @version        2.6.3-fix-playlist.51
 // @run-at         document-body
 // @require        https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js
 // @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaWatch-dev.user.js
@@ -101,7 +101,7 @@ AntiPrototypeJs();
     let {dimport, workerUtil, IndexedDbStorage, Handler, PromiseHandler, Emitter, parseThumbInfo, WatchInfoCacheDb, StoryboardCacheDb, VideoSessionWorker} = window.ZenzaLib;
     START_PAGE_QUERY = decodeURIComponent(START_PAGE_QUERY);
 
-    var VER = '2.6.3-fix-playlist.50';
+    var VER = '2.6.3-fix-playlist.51';
     const ENV = 'DEV';
 
 
@@ -30719,21 +30719,38 @@ class HoverMenu {
 			subtree: true,
 		});
 	};
-	const isWatchPage = () => {
+	const readyContent = () => {
+		if (document.querySelector('[aria-label="nicovideo-content"]') != null) {
+			return Promise.resolve();
+		}
+		const {promise, resolve} = Promise.withResolvers();
+		new MutationObserver((records, observer) => {
+			for (const record of records) {
+				if(record.addedNodes.length === 0 || document.querySelector('[aria-label="nicovideo-content"]') == null) {
+					continue;
+				}
+				resolve();
+				observer.disconnect();
+			}
+		}).observe(document.getElementById('root'), {
+			childList: true,
+		});
+		return promise;
+	}
+	const isWatchPage = async () => {
+		if (!util.isGinzaWatchUrl()) {
+			return false;
+		}
 		const res = document.querySelector('meta[name="server-response"]')?.getAttribute('content');
-		if (res === null) {
+		if (res == null) {
+			await readyContent();
 			return !!document.querySelector('.grid-area_\\[player\\]');
 		}
 		const json = JSON.parse(res);
 		if (json.meta.status > 299) {
 			return false;
 		}
-		for (const ld of json.data.metadata.jsonLds) {
-			if (ld['@type'] === 'VideoObject') {
-				return true;
-			}
-		}
-		return false;
+		return typeof json.data.response.okReason === 'string';
 	};
 	const initWorker = () => {
 		if (!location.host.endsWith('.nicovideo.jp')) { return; }
@@ -30922,7 +30939,7 @@ const replaceRedirectLinks = async () => {
 		replaceRedirectLinks();
 		const query = textUtil.parseQuery(START_PAGE_QUERY);
 		await uq.ready(); // DOMContentLoaded
-		const isWatch = util.isGinzaWatchUrl() && isWatchPage();
+		const isWatch = async isWatchPage();
 		if (typeof Config.props.commentLanguage === 'string') {
 			Config.props.commentLanguage = Config.props.commentLanguage.replace('_', '-').toLowerCase();
 		}
