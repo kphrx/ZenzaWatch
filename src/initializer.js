@@ -89,7 +89,7 @@ const {initialize} = (() => {
   const isWatchPage = () => {
     const res = document.querySelector('meta[name="server-response"]')?.getAttribute('content');
 
-    if (res === null) {
+    if (res == null) {
       return !!document.querySelector('.grid-area_\\[player\\]');
     }
 
