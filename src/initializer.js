@@ -153,7 +153,7 @@ const {initialize} = (() => {
     const query = textUtil.parseQuery(START_PAGE_QUERY);
 
     await uq.ready(); // DOMContentLoaded
-    const isWatch = async isWatchPage();
+    const isWatch = await isWatchPage();
 
     const hoverMenu = global.debug.hoverMenu = new HoverMenu({playerConfig: Config});
 
