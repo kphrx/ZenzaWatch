@@ -32,7 +32,7 @@
 // @exclude        *://ext.nicovideo.jp/thumb_channel/*
 // @grant          none
 // @author         segabito
-// @version        2.6.3-fix-playlist.51
+// @version        2.6.3-fix-playlist.52
 // @run-at         document-body
 // @require        https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js
 // @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaWatch-dev.user.js
@@ -101,7 +101,7 @@ AntiPrototypeJs();
     let {dimport, workerUtil, IndexedDbStorage, Handler, PromiseHandler, Emitter, parseThumbInfo, WatchInfoCacheDb, StoryboardCacheDb, VideoSessionWorker} = window.ZenzaLib;
     START_PAGE_QUERY = decodeURIComponent(START_PAGE_QUERY);
 
-    var VER = '2.6.3-fix-playlist.51';
+    var VER = '2.6.3-fix-playlist.52';
     const ENV = 'DEV';
 
 
@@ -30939,7 +30939,7 @@ const replaceRedirectLinks = async () => {
 		replaceRedirectLinks();
 		const query = textUtil.parseQuery(START_PAGE_QUERY);
 		await uq.ready(); // DOMContentLoaded
-		const isWatch = async isWatchPage();
+		const isWatch = await isWatchPage();
 		if (typeof Config.props.commentLanguage === 'string') {
 			Config.props.commentLanguage = Config.props.commentLanguage.replace('_', '-').toLowerCase();
 		}
