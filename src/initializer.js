@@ -99,13 +99,7 @@ const {initialize} = (() => {
       return false;
     }
 
-    for (const ld of json.data.metadata.jsonLds) {
-      if (ld['@type'] === 'VideoObject') {
-        return true;
-      }
-    }
-
-    return false;
+    return typeof json.data.response.okReason === 'string';
   };
 
   const initWorker = () => {
