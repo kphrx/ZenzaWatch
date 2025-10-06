@@ -32,7 +32,7 @@
 // @exclude        *://ext.nicovideo.jp/thumb_channel/*
 // @grant          none
 // @author         segabito
-// @version        2.6.3-fix-playlist.50
+// @version        2.6.3-fix-playlist.50.1
 // @run-at         document-body
 // @require        https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js
 // @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaWatch-dev.user.js
@@ -101,7 +101,7 @@ AntiPrototypeJs();
     let {dimport, workerUtil, IndexedDbStorage, Handler, PromiseHandler, Emitter, parseThumbInfo, WatchInfoCacheDb, StoryboardCacheDb, VideoSessionWorker} = window.ZenzaLib;
     START_PAGE_QUERY = decodeURIComponent(START_PAGE_QUERY);
 
-    var VER = '2.6.3-fix-playlist.50';
+    var VER = '2.6.3-fix-playlist.50.1';
     const ENV = 'DEV';
 
 
@@ -8730,7 +8730,39 @@ const {ThreadLoader} = (() => {
 				if (meta.status >= 300) {
 					throw meta
 				}
-				return data
+				const { postKey, challenge } = data;
+				if (!challenge.isRequired) {
+					return { postKey };
+				}
+				await new Promise((resolve, reject) => {
+					if (typeof window.turnstile !== 'undefined') {
+						return resolve();
+					}
+					const turnstileUrl = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+					const script = document.createElement('script');
+					script.id = `loadScript-${ btoa(turnstileUrl) }`
+					script.src = turnstileUrl;
+					script.type = 'text/javascript';
+					script.async = true;
+					script.addEventListener('load', () => {
+						script.remove();
+						resolve();
+					});
+					script.addEventListener('error', (e) => {
+						script.remove();
+						reject(e);
+					});
+					document.head.appendChild(script);
+				});
+				const input = document.querySelector('.commentInputPanel');
+				const { promise, resolve, reject } = Promise.withResolvers();
+				window.turnstile.render(input, {
+					sitekey: challenge.siteKey,
+					appearance: 'interaction-only',
+					callback: (t) => resolve(t),
+					'error-callback': (e) => reject(e),
+				});
+				return { postKey, captchaToken: await promise };
 			} catch (result) {
 				throw { result, message: `PostKeyの取得失敗 ${threadId}` }
 			}
@@ -8878,12 +8910,13 @@ const {ThreadLoader} = (() => {
 				language
 			} = msgInfo.threadInfo;
 			const url = new URL(`/v1/threads/${threadId}/comments`, msgInfo.nvComment.server);
-			const { postKey } = await this.getPostKey(threadId, { language });
+			const { postKey, challengeToken } = await this.getPostKey(threadId, { language });
 			const packet = JSON.stringify({
 				body: text,
 				commands: cmd?.split(/[\x20\xA0\u3000\t\u2003\s]+/) ?? [],
 				vposMs: Math.floor((vpos || 0) * 10),
 				postKey,
+				challengeToken,
 				videoId,
 			});
 			console.log('post packet: ', packet);
