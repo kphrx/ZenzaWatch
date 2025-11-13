@@ -481,15 +481,12 @@ AntiPrototypeJs().then(() => {
       .nicoadVideoItemWrapper {
         display: none;
       }
-      [aria-label="nicovideo-content"] > div > div:nth-of-type(2) > div:nth-of-type(2) > div:first-of-type {
-        a[data-anchor-page="tag"], a[data-anchor-page="search"] {
-          &:has(div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)) {
-            display: none;
-          }
+      [aria-label="nicovideo-content"] > div > div > div:nth-of-type(2) > div:nth-of-type(2) > div {
+        > a:is([data-anchor-page="tag"], [data-anchor-page="search"]):has(div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)) {
+          display: none;
         }
       }
-      [aria-label="nicovideo-content"] > section > div:nth-of-type(2) {
-        > div:has(a[data-anchor-page="ranking_for-you"]),
+      [aria-label="nicovideo-content"] > div > section > div:nth-of-type(2) {
         > div > div:first-of-type > div:nth-of-type(2) > div:has(a[data-anchor-page="ranking_genre"]),
         > div > div:has(a[data-anchor-page="ranking_custom"]) {
           &:has(div:is(.c_serviceColor\\.nicoadGold, .c_serviceColor\\.nicoadGray)) {
@@ -506,13 +503,8 @@ AntiPrototypeJs().then(() => {
     `.trim();
 
     const hideTagCss = (tagName) => `
-      [aria-label="nicovideo-content"] > section > div:nth-of-type(2) {
-        > section:has(a[data-anchor-page="ranking_for-you"]),
-        > div > div:last-of-type > div:first-of-type:has(a[data-anchor-page="ranking_genre"]) {
-          &:has(a[data-anchor-href^="/ranking/genre/"][data-anchor-href$="?tag=${encodeURIComponent(tagName.trim())}"]) > div:nth-of-type(2) {
-            display: none;
-          }
-        }
+      [aria-label="nicovideo-content"] > div > section > div:nth-of-type(2) > div > div:last-of-type > div:first-of-type:has(a[data-anchor-page="ranking_genre"]):has(a[data-anchor-href^="/ranking/genre/"][data-anchor-href$="?tag=${encodeURIComponent(tagName.trim())}"]) > div:nth-of-type(2) {
+        display: none;
       }
     `.trim();
 
@@ -1671,7 +1663,7 @@ AntiPrototypeJs().then(() => {
           color: var(--colors-text-on-layer-low-em);
         }
 
-        &:is([data-anchor-page="ranking_for-you"], [data-anchor-page="ranking_custom"], .cq-t_inline-size[data-anchor-page="tag"], .cq-t_inline-size[data-anchor-page="search"]) {
+        &:is([data-anchor-page="ranking_custom"], .cq-t_inline-size[data-anchor-page="tag"], .cq-t_inline-size[data-anchor-page="search"]) {
           flex-direction: column;
           height: 100%;
 
