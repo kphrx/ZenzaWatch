@@ -1830,12 +1830,14 @@ AntiPrototypeJs().then(() => {
           });
 
 
-        html = html.replace(/(im)(\d+)/g,
-          ' <a href="//seiga.nicovideo.jp/seiga/$1$2" class="seigaLink" rel="noopener" target="_blank">$1$2</a> ');
-        html = html.replace(/(co)(\d+)/g,
-          ' <a href="//com.nicovideo.jp/community/$1$2" class="communityLink" rel="noopener" target="_blank">$1$2</a> ');
-        html = html.replace(/(watch|mylist|user)\/(\d+)/g, ' <a href="https://www.nicovideo.jp/$1/$2" rel="noopener" class="videoLink target-change">$1/$2</a> ');
-        html = html.replace(/(sm|nm|so)(\d+)/g,       ' <a href="https://www.nicovideo.jp/watch/$1$2" rel="noopener" class="videoLink target-change">$1$2</a> ');
+        html = html.replace(/(https?:\/\/seiga\.nicovideo\.jp\/seiga\/)?im(\d+)/g,
+          ' <a href="//seiga.nicovideo.jp/seiga/im$2" class="seigaLink" rel="noopener" target="_blank">$1im$2</a> ');
+        html = html.replace(/(https?:\/\/com\.nicovideo\.jp\/community\/)?co(\d+)/g,
+          ' <a href="//com.nicovideo.jp/community/co$2" class="communityLink" rel="noopener" target="_blank">$1co$2</a> ');
+        html = html.replace(/(https?:\/\/www\.nicovideo\.jp\/)?(watch|mylist|series|user)\/(\d+)/g,
+          ' <a href="https://www.nicovideo.jp/$2/$3" rel="noopener" class="videoLink target-change">$1$2/$3</a> ');
+        html = html.replace(/(https?:\/\/www\.nicovideo\.jp\/watch\/)?(sm|nm|so)(\d+)/g,
+          ' <a href="https://www.nicovideo.jp/watch/$2$3" rel="noopener" class="videoLink target-change">$1$2$3</a> ');
 
         let linkmatch = /<a.*?<\/a>/, n;
         html = html.split('<br />').join(' <br /> ');
