@@ -159,8 +159,14 @@ class NicoChat {
     props.thread = data.thread * 1;
     props.isPremium = data.premium ? '1' : '0';
     props.isSubThread = (options.mainThreadId && props.thread !== options.mainThreadId);
-    props.layerId = typeof data.layerId === 'number' ?
-      data.layerId : (props.fork*1 % 2 /* fork2を0と同じレイヤーにするダメ対応. fork3とか4とか来たらまた考える */);
+    if (typeof data.layerId === 'number') {
+      props.layerId = data.layerId;
+    } else if (props.fork > 1) {
+      // fork2,fork3を0と同じレイヤーにする対応
+      props.layerId = 0;
+    } else {
+      props.layerId = props.fork;
+    }
     props.uniqNo =
       (data.no                 %   10000) +
       (data.fork               *  100000) +

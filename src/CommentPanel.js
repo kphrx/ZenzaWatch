@@ -1027,7 +1027,7 @@ const CommentListItemView = (() => {
       .commentListItem.fork1 .timepos {
         text-shadow: 1px 1px 0 #008800, -1px -1px 0 #008800 !important;
       }
-      .commentListItem.fork2 .timepos {
+      .commentListItem:where(.fork2, .fork3) .timepos {
         opacity: 0.6;
       }
       .commentListItem.fork1 .text {
