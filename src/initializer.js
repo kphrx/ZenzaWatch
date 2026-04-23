@@ -34,18 +34,95 @@ const START_PAGE_QUERY = 'hoge=fuga';
 const {initialize} = (() => {
 //@require HoverMenu
   // GINZAを置き換えるべきか？の判定
-  const isOverrideGinza = () => {
-    // GINZAで視聴のリンクできた場合はfalse
+  const overrideGinza = async (dialog, query) => {
+    // GINZAで視聴のリンクできた場合はスキップ
     if (window.name === 'watchGinza') {
-      return false;
-    }
-    // GINZAの代わりに起動する設定、かつZenzaで再生可能な動画はtrue
-    // nmmやrtmpeの動画だとfalseになる
-    if (Config.props.overrideGinza && nicoUtil.isZenzaPlayableVideo()) {
-      return true;
+      window.name = '';
+      return;
     }
 
-    return false;
+    if (!Config.props.overrideGinza) {
+      return
+    }
+
+    initializeGinzaSlayer(dialog, query);
+
+    await uq.complete();
+
+    // 再生を無理やり止める
+    const stopPlayer = (ev) => {
+      if (!document.body.classList.contains('showNicoVideoPlayerDialog')) return;
+
+      // 画面モードが横か小のときには止めない
+      if (/(^|[^\w])zenzaScreenMode_(small|sideView)([^\w]|$)/.test(document.body.className)) return;
+
+      ev.target.pause();
+    };
+    const video = document.querySelector('.grid-area_\\[player\\] video');
+    if (video !== null) {
+      video.addEventListener('play', stopPlayer);
+      video.pause();
+      return;
+    }
+
+    new MutationObserver((records, observer) => {
+      for (const record of records) {
+        if(record.addedNodes.length === 0) {
+          continue;
+        }
+
+        const video = record.target.querySelector('.grid-area_\\[player\\] video');
+        if (video === null) {
+          continue;
+        }
+
+        video.addEventListener('play', stopPlayer);
+        video.pause();
+        observer.disconnect();
+      }
+    }).observe(document.getElementById('root'), {
+      childList: true,
+      subtree: true,
+    });
+  };
+
+  const readyContent = () => {
+    if (document.querySelector('[aria-label="nicovideo-content"]') != null) {
+      return Promise.resolve();
+    }
+    const {promise, resolve} = Promise.withResolvers();
+    new MutationObserver((records, observer) => {
+      for (const record of records) {
+        if(record.addedNodes.length === 0 || document.querySelector('[aria-label="nicovideo-content"]') == null) {
+          continue;
+        }
+        resolve();
+        observer.disconnect();
+      }
+    }).observe(document.getElementById('root'), {
+      childList: true,
+    });
+    return promise;
+  }
+
+  const isWatchPage = async () => {
+    if (!util.isGinzaWatchUrl()) {
+      return false;
+    }
+
+    const res = document.querySelector('meta[name="server-response"]')?.getAttribute('content');
+    if (res == null) {
+      await readyContent();
+      return !!document.querySelector('.grid-area_\\[player\\]');
+    }
+
+    const json = JSON.parse(res);
+
+    if (json.meta.status > 299) {
+      return false;
+    }
+
+    return typeof json.data.response.okReason === 'string';
   };
 
   const initWorker = () => {
@@ -76,9 +153,7 @@ const {initialize} = (() => {
     const query = textUtil.parseQuery(START_PAGE_QUERY);
 
     await uq.ready(); // DOMContentLoaded
-    const isWatch = util.isGinzaWatchUrl() &&
-      (!!document.getElementById('watchAPIDataContainer') ||
-        !!document.getElementById('js-initial-watch-data'));
+    const isWatch = await isWatchPage();
 
     const hoverMenu = global.debug.hoverMenu = new HoverMenu({playerConfig: Config});
 
@@ -91,15 +166,8 @@ const {initialize} = (() => {
     const dialog = initializeDialogPlayer(Config);
     hoverMenu.setPlayer(dialog);
 
-
-    // watchページか？
     if (isWatch) {
-      if (isOverrideGinza()) {
-        initializeGinzaSlayer(dialog, query);
-      }
-      if (window.name === 'watchGinza') {
-        window.name = '';
-      }
+      await overrideGinza(dialog, query);
     }
 
     initializeMessage(dialog);

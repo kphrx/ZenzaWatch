@@ -44,15 +44,16 @@ const Fullscreen = {
   _handleEvents() {
     this._handleEvnets = _.noop;
     const cl = ClassList(document.body);
-    const handle = () => {
+    const handle = (ev) => {
+      ev.stopImmediatePropagation();
       const isFull = this.now();
       cl.toggle('is-fullscreen', isFull);
       global.emitter.emit('fullscreenStatusChange', isFull);
     };
-    document.addEventListener('webkitfullscreenchange', handle, false);
-    document.addEventListener('mozfullscreenchange', handle, false);
-    document.addEventListener('MSFullscreenChange', handle, false);
-    document.addEventListener('fullscreenchange', handle, false);
+    document.addEventListener('webkitfullscreenchange', handle, true);
+    document.addEventListener('mozfullscreenchange', handle, true);
+    document.addEventListener('MSFullscreenChange', handle, true);
+    document.addEventListener('fullscreenchange', handle, true);
   }
 };
 
