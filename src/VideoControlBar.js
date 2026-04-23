@@ -2108,7 +2108,7 @@ util.addStyle(`
   .listContainer .nicoChat.fork1 .vposTime {
     color: #6f6;
   }
-  .listContainer .nicoChat.fork2 .vposTime {
+  .listContainer .nicoChat:where(.fork2, .fork3) .vposTime {
     color: #66f;
   }
 

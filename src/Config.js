@@ -58,12 +58,14 @@ const Config = (() => {
     'filter.fork0': true, // 通常コメント
     'filter.fork1': true, // 投稿者コメント
     'filter.fork2': true, // かんたんコメント
+    'filter.fork3': true, // AIキャラクターコメント
 
     'filter.defaultThread': true, // 通常コメント
     'filter.ownerThread': true, // 投稿者コメント
     'filter.communityThread': true, // チャンネルコメント / コミュニティコメント
     'filter.nicosThread': true, // ニコスクリプトコメント
     'filter.easyThread': true, // かんたんコメント
+    'filter.aiThread': true, // AIキャラクターコメント
     'filter.extraDefaultThread': true, // ***extra-default
     'filter.extraOwnerThread': true, // ***extra-owner
     'filter.extraCommunityThread': true, // 引用コメント
@@ -109,6 +111,7 @@ const Config = (() => {
     'commentLayer.enableSlotLayoutEmulation': false,
     'commentLayer.ownerCommentShadowColor': '#008800', // 投稿者コメントの影の色
     'commentLayer.easyCommentOpacity': 0.5, // かんたんコメントの透明度
+    'commentLayer.aiCommentOpacity': 0.5, // かんたんコメントの透明度
 
     overrideGinza: false,     // 動画視聴ページでもGinzaの代わりに起動する
     enableGinzaSlayer: false, // まだ実験中

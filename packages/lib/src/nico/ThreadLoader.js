@@ -14,6 +14,7 @@ const {ThreadLoader} = (() => {
     0: 'main',
     1: 'owner',
     2: 'easy',
+    3: 'ai',
   }
 
   class ThreadLoader {

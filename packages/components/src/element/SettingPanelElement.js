@@ -280,6 +280,13 @@ const {SettingPanelElement} = (() => {
               data-setting-name="commentLayer.easyCommentOpacity" data-type="number"
             >
           </label>
+          <label>
+            AIキャラクターコメント
+            <input type="range" value=${conf.commentLayer.aiCommentOpacity}
+              min="0.1" max="1.0" step="0.1"
+              data-setting-name="commentLayer.aiCommentOpacity" data-type="number"
+            >
+          </label>
         </div>
 
         <div class="control">
@@ -435,6 +442,13 @@ const {SettingPanelElement} = (() => {
                 value="">
                 かんたんコメント
             </label>
+            <label class="short">
+              <input type="checkbox"
+                data-setting-name="filter.fork3"
+                ?checked=${conf.filter.fork3}
+                value="">
+                AIキャラクターコメント
+            </label>
             <h4>種類</h4>
             <label class="short">
               <input type="checkbox"
@@ -470,6 +484,13 @@ const {SettingPanelElement} = (() => {
                 ?checked=${conf.filter.easyThread}
                 value="">
                 かんたんコメント
+            </label>
+            <label class="short">
+              <input type="checkbox"
+                data-setting-name="filter.aiThread"
+                ?checked=${conf.filter.aiThread}
+                value="">
+                AIキャラクターコメント
             </label>
             <!--
             <label class="short">

@@ -19,12 +19,14 @@ class NicoChatFilter extends Emitter {
     this._fork0 = typeof params.fork0 === 'boolean' ? params.fork0 : true;
     this._fork1 = typeof params.fork1 === 'boolean' ? params.fork1 : true;
     this._fork2 = typeof params.fork2 === 'boolean' ? params.fork2 : true;
+    this._fork3 = typeof params.fork3 === 'boolean' ? params.fork3 : true;
 
     this._defaultThread = typeof params.defaultThread === 'boolean' ? params.defaultThread : true;
     this._ownerThread = typeof params.ownerThread === 'boolean' ? params.ownerThread : true;
     this._communityThread = typeof params.communityThread === 'boolean' ? params.communityThread : true;
     this._nicosThread = typeof params.nicosThread === 'boolean' ? params.nicosThread : true;
     this._easyThread = typeof params.easyThread === 'boolean' ? params.easyThread : true;
+    this._aiThread = typeof params.aiThread === 'boolean' ? params.aiThread : true;
     this._extraDefaultThread = typeof params.extraDefaultThread === 'boolean' ? params.extraDefaultThread : true;
     this._extraOwnerThread = typeof params.extraOwnerThread === 'boolean' ? params.extraOwnerThread : true;
     this._extraCommunityThread = typeof params.extraCommunityThread === 'boolean' ? params.extraCommunityThread : true;
@@ -85,6 +87,13 @@ class NicoChatFilter extends Emitter {
     this._fork2 = v;
     this.refresh();
   }
+  get fork3() { return this._fork3; }
+  set fork3(v) {
+    v = !!v;
+    if (this._fork3 === v) { return; }
+    this._fork3 = v;
+    this.refresh();
+  }
   get defaultThread() { return this._defaultThread; }
   set defaultThread(v) {
     v = !!v;
@@ -118,6 +127,13 @@ class NicoChatFilter extends Emitter {
     v = !!v;
     if (this._easyThread === v) { return; }
     this._easyThread = v;
+    this.refresh();
+  }
+  get aiThread() { return this._aiThread; }
+  set aiThread(v) {
+    v = !!v;
+    if (this._aiThread === v) { return; }
+    this._aiThread = v;
     this.refresh();
   }
   get extraDefaultThread() { return this._extraDefaultThread; }
@@ -385,6 +401,7 @@ class NicoChatFilter extends Emitter {
       !this.fork0 && 0,
       !this.fork1 && 1,
       !this.fork2 && 2,
+      !this.fork3 && 3,
     ].filter(type => type !== false);
     const denyThreadTypes = [
       !this.defaultThread        && 'default',
@@ -392,6 +409,7 @@ class NicoChatFilter extends Emitter {
       !this.communityThread      && 'community',
       !this.nicosThread          && 'nicos',
       !this.easyThread           && 'easy',
+      !this.aiThread             && 'ai',
       !this.extraDefaultThread   && 'extra-default',
       !this.extraOwnerThread     && 'extra-owner',
       !this.extraCommunityThread && 'extra-community',
