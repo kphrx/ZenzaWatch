@@ -143,7 +143,7 @@ class HoverMenu {
       };
       userPageIntercept = e => {
         const target = e.target;
-        if (target.tagName !== 'A' || !target.closest('.TimelineItem_video')) {
+        if (target.tagName !== 'A' || !target.closest('.TimelineItem_video,.TimelineItem_shortVideo')) {
           return;
         }
         // console.nicoru('mouseover', target.tagName);
@@ -174,7 +174,7 @@ class HoverMenu {
         return;
       }
 
-      if (target.closest('.TimelineItem_video')) {
+      if (target.closest('.TimelineItem_video,.TimelineItem_shortVideo')) {
         // console.nicoru('nicorepoi', target, target.href);
         e.stopPropagation();
         // history.pushState(null, null, target.href);
