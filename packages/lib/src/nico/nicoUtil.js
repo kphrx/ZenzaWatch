@@ -63,13 +63,13 @@ const nicoUtil = {
       `https://tn.smilevideo.jp/smile?i=${fileId}.${large}`;
   },
   getWatchId: url => {
-    let m;
     if (url && url.indexOf('nico.ms') >= 0) {
-      m = /\/\/nico\.ms\/([a-z0-9]+)/.exec(url);
+      let m = /\/\/nico\.ms\/([a-z0-9]+)/.exec(url);
+      return m ? m[1] : null;
      } else {
-      m = /\/?watch\/([a-z0-9]+)/.exec(url || location.pathname);
+      let m = /\/?(watch|shorts)\/([a-z0-9]+)/.exec(url || location.pathname);
+      return m ? m[2] : null;
     }
-    return m ? m[1] : null;
   },
   getCommonHeader: () => {
     try { // hoge?.fuga... はGreasyforkの文法チェックで弾かれるのでまだ使えない
@@ -122,7 +122,7 @@ const nicoUtil = {
       '';
     window.open(url, '_blank', 'width=550, height=480, left=100, top50, personalbar=0, toolbar=0, scrollbars=1, sizable=1', 0);
   },
-  isGinzaWatchUrl: url => /^https?:\/\/www\.nicovideo\.jp\/watch\//.test(url || location.href),
+  isGinzaWatchUrl: url => /^https?:\/\/www\.nicovideo\.jp\/(watch|shorts)\//.test(url || location.href),
   getNicoHistory: window.decodeURIComponent(document.cookie.replace(/^.*(nicohistory[^;+]).*?/, '')),
   getMypageVer: () => document.querySelector('#js-initial-userpage-data') ? 'spa' : 'legacy'
 };

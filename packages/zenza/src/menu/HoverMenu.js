@@ -49,7 +49,7 @@ class HoverMenu {
     return this._playerPromise;
   }
   _closest(target) {
-    return target.closest('a[href*="watch/"],a[href*="nico.ms/"],.UadVideoItem-link');
+    return target.closest('a[href*="watch/"],a[href*="shorts/"],a[href*="nico.ms/"],.UadVideoItem-link');
   }
   _onHover (e) {
     const target = this._closest(e.target);
@@ -143,7 +143,7 @@ class HoverMenu {
       };
       userPageIntercept = e => {
         const target = e.target;
-        if (target.tagName !== 'A' || !target.closest('.TimelineItem_video')) {
+        if (target.tagName !== 'A' || !target.closest('.TimelineItem_video,.TimelineItem_shortVideo')) {
           return;
         }
         // console.nicoru('mouseover', target.tagName);
@@ -174,7 +174,7 @@ class HoverMenu {
         return;
       }
 
-      if (target.closest('.TimelineItem_video')) {
+      if (target.closest('.TimelineItem_video,.TimelineItem_shortVideo')) {
         // console.nicoru('nicorepoi', target, target.href);
         e.stopPropagation();
         // history.pushState(null, null, target.href);
