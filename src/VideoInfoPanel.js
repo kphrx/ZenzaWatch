@@ -156,11 +156,12 @@ class VideoInfoPanel extends Emitter {
       }
     }
     const decorateWatchLink = watchLink => {
-      const videoId = watchLink.textContent.replace('watch/', '');
+      const videoId = watchLink.textContent.replace('watch/', '').replace('shorts/', '');
 
       if (
-        !/^(sm|nm|so|)[0-9]+$/.test(videoId) ||
-        !['www.nicovideo.jp'].includes(watchLink.hostname) || !watchLink.pathname.startsWith('/watch/')) {
+        !/^(sm|nm|so|ss)[0-9]+$/.test(videoId) ||
+        !['www.nicovideo.jp'].includes(watchLink.hostname) ||
+        !(watchLink.pathname.startsWith('/watch/') || watchLink.pathname.startsWith('/shorts/'))) {
         return;
       }
       watchLink.classList.add('noHoverMenu');
