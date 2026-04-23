@@ -26,7 +26,7 @@
 // @exclude     *://dic.nicovideo.jp/p/*
 // @exclude     *://ext.nicovideo.jp/thumb/*
 // @exclude     *://ext.nicovideo.jp/thumb_channel/*
-// @version     0.5.15-fix-mylist-api.16
+// @version     0.5.15-fix-mylist-api.17
 // @grant       none
 // @author      segabito macmoto
 // @license     public domain
@@ -1809,10 +1809,12 @@ AntiPrototypeJs().then(() => {
           ' <a href="//seiga.nicovideo.jp/seiga/im$2" class="seigaLink" rel="noopener" target="_blank">$1im$2</a> ');
         html = html.replace(/(https?:\/\/com\.nicovideo\.jp\/community\/)?co(\d+)/g,
           ' <a href="//com.nicovideo.jp/community/co$2" class="communityLink" rel="noopener" target="_blank">$1co$2</a> ');
-        html = html.replace(/(https?:\/\/www\.nicovideo\.jp\/)?(watch|mylist|series|user)\/(\d+)/g,
+        html = html.replace(/(https?:\/\/www\.nicovideo\.jp\/)?(watch|shorts|mylist|series|user)\/(\d+)/g,
           ' <a href="https://www.nicovideo.jp/$2/$3" rel="noopener" class="videoLink target-change">$1$2/$3</a> ');
-        html = html.replace(/(https?:\/\/www\.nicovideo\.jp\/watch\/)?(sm|nm|so)(\d+)/g,
+        html = html.replace(/(https?:\/\/www\.nicovideo\.jp\/watch\/)?(sm|nm|so|ss)(\d+)/g,
           ' <a href="https://www.nicovideo.jp/watch/$2$3" rel="noopener" class="videoLink target-change">$1$2$3</a> ');
+        html = html.replace(/(https?:\/\/www\.nicovideo\.jp\/shorts\/)?ss(\d+)/g,
+          ' <a href="https://www.nicovideo.jp/shorts/ss$2" rel="noopener" class="videoLink target-change">$1ss$2</a> ');
 
         let linkmatch = /<a.*?<\/a>/, n;
         html = html.split('<br />').join(' <br /> ');
@@ -2091,13 +2093,13 @@ const nicoUtil = {
 			`https://tn.smilevideo.jp/smile?i=${fileId}.${large}`;
 	},
 	getWatchId: url => {
-		let m;
 		if (url && url.indexOf('nico.ms') >= 0) {
-			m = /\/\/nico\.ms\/([a-z0-9]+)/.exec(url);
+			let m = /\/\/nico\.ms\/([a-z0-9]+)/.exec(url);
+			return m ? m[1] : null;
 		} else {
-			m = /\/?watch\/([a-z0-9]+)/.exec(url || location.pathname);
+			let m = /\/?(watch|shorts)\/([a-z0-9]+)/.exec(url || location.pathname);
+			return m ? m[2] : null;
 		}
-		return m ? m[1] : null;
 	},
 	getCommonHeader: () => {
 		try { // hoge?.fuga... はGreasyforkの文法チェックで弾かれるのでまだ使えない
@@ -2149,7 +2151,7 @@ isLoginLegacy: () => {
 			'';
 		window.open(url, '_blank', 'width=550, height=480, left=100, top50, personalbar=0, toolbar=0, scrollbars=1, sizable=1', 0);
 	},
-	isGinzaWatchUrl: url => /^https?:\/\/www\.nicovideo\.jp\/watch\//.test(url || location.href),
+	isGinzaWatchUrl: url => /^https?:\/\/www\.nicovideo\.jp\/(watch|shorts)\//.test(url || location.href),
 	getNicoHistory: window.decodeURIComponent(document.cookie.replace(/^.*(nicohistory[^;+]).*?/, '')),
 	getMypageVer: () => document.querySelector('#js-initial-userpage-data') ? 'spa' : 'legacy'
 };
@@ -4054,7 +4056,7 @@ const MylistApiLoader = (() => {
           e.target.tagName === 'A' ? e.target : e.target.closest('a');
         if (!target) { return false; }
         const href = target.href || '';
-        if (!/(watch\/[a-z0-9]+|nico\.ms\/[a-z0-9]+)/.test(href)) { return false; }
+        if (!/((watch|shorts)\/[a-z0-9]+|nico\.ms\/[a-z0-9]+)/.test(href)) { return false; }
         return target;
       }
 
@@ -4466,13 +4468,13 @@ const MylistApiLoader = (() => {
 
       _createDescription(elm, data) {
         elm.innerHTML = util.httpLink(data);
-        const watchReg = /watch\/([a-z0-9]+)/;
+        const watchReg = /(watch|shorts)\/([a-z0-9]+)/;
         const isZenzaReady = this._isZenzaReady;
         //if (util.isFirefox()) { return; }
-        Array.from(elm.querySelectorAll('.videoLink[href*=\'watch/\']')).forEach((link) => {
+        Array.from(elm.querySelectorAll('.videoLink[href*="watch/"],.videoLink[href*="shorts/"]')).forEach((link) => {
           const href = link.getAttribute('href');
           if (!watchReg.test(href)) { return; }
-          const watchId = RegExp.$1;
+          const watchId = RegExp.$2;
           if (isZenzaReady) {
             link.classList.add('noHoverMenu');
             link.classList.add('command');
@@ -5167,12 +5169,12 @@ const MylistApiLoader = (() => {
           item.dataset.decorationVideoId;
         const ignore = () => item.classList.add('is-ng-ignore');
         if (!watchId) {
-          const a = item instanceof HTMLAnchorElement ? item : item.querySelector('a[href*=\'watch/\']');
+          const a = item instanceof HTMLAnchorElement ? item : item.querySelector('a[href*=\'watch/\'],a[href*="shorts/"]');
           let m;
           if (a != null &&
               a.hostname === 'www.nicovideo.jp' &&
-              (m = /^\/watch\/([a-z0-9]+)/.exec(a.pathname)) !== null) {
-            watchId = m[1];
+              (m = /^\/(watch|shorts)\/([a-z0-9]+)/.exec(a.pathname)) !== null) {
+            watchId = m[2];
           }
         }
 
@@ -5306,6 +5308,11 @@ const MylistApiLoader = (() => {
               for (let a of item.querySelectorAll(`a[href*="watch/${watchId}"]`)) {
                 let href = a.getAttribute('href');
                 href = href.replace(/watch\/([0-9]+)/, `watch/${info.id}`);
+                a.setAttribute('href', href.replace(/^http:/, 'https:'));
+              }
+              for (let a of item.querySelectorAll(`a[href*="shorts/${watchId}"]`)) {
+                let href = a.getAttribute('href');
+                href = href.replace(/shorts\/([0-9]+)/, `shorts/${info.id}`);
                 a.setAttribute('href', href.replace(/^http:/, 'https:'));
               }
             }

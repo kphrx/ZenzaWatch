@@ -32,7 +32,7 @@
 // @exclude        *://ext.nicovideo.jp/thumb_channel/*
 // @grant          none
 // @author         segabito
-// @version        2.6.3-fix-playlist.52
+// @version        2.6.3-fix-playlist.53
 // @run-at         document-body
 // @require        https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js
 // @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaWatch-dev.user.js
@@ -101,7 +101,7 @@ AntiPrototypeJs();
     let {dimport, workerUtil, IndexedDbStorage, Handler, PromiseHandler, Emitter, parseThumbInfo, WatchInfoCacheDb, StoryboardCacheDb, VideoSessionWorker} = window.ZenzaLib;
     START_PAGE_QUERY = decodeURIComponent(START_PAGE_QUERY);
 
-    var VER = '2.6.3-fix-playlist.52';
+    var VER = '2.6.3-fix-playlist.53';
     const ENV = 'DEV';
 
 
@@ -807,11 +807,13 @@ const Config = (() => {
 		'filter.fork0': true, // 通常コメント
 		'filter.fork1': true, // 投稿者コメント
 		'filter.fork2': true, // かんたんコメント
+		'filter.fork3': true, // AIキャラクターコメント
 		'filter.defaultThread': true, // 通常コメント
 		'filter.ownerThread': true, // 投稿者コメント
 		'filter.communityThread': true, // チャンネルコメント / コミュニティコメント
 		'filter.nicosThread': true, // ニコスクリプトコメント
 		'filter.easyThread': true, // かんたんコメント
+		'filter.aiThread': true, // AIキャラクターコメント
 		'filter.extraDefaultThread': true, // ***extra-default
 		'filter.extraOwnerThread': true, // ***extra-owner
 		'filter.extraCommunityThread': true, // 引用コメント
@@ -841,6 +843,7 @@ const Config = (() => {
 		'commentLayer.enableSlotLayoutEmulation': false,
 		'commentLayer.ownerCommentShadowColor': '#008800', // 投稿者コメントの影の色
 		'commentLayer.easyCommentOpacity': 0.5, // かんたんコメントの透明度
+		'commentLayer.aiCommentOpacity': 0.5, // かんたんコメントの透明度
 		overrideGinza: false,     // 動画視聴ページでもGinzaの代わりに起動する
 		enableGinzaSlayer: false, // まだ実験中
 		lastPlayerId: '',
@@ -2347,13 +2350,13 @@ const nicoUtil = {
 			`https://tn.smilevideo.jp/smile?i=${fileId}.${large}`;
 	},
 	getWatchId: url => {
-		let m;
 		if (url && url.indexOf('nico.ms') >= 0) {
-			m = /\/\/nico\.ms\/([a-z0-9]+)/.exec(url);
+			let m = /\/\/nico\.ms\/([a-z0-9]+)/.exec(url);
+			return m ? m[1] : null;
 		} else {
-			m = /\/?watch\/([a-z0-9]+)/.exec(url || location.pathname);
+			let m = /\/?(watch|shorts)\/([a-z0-9]+)/.exec(url || location.pathname);
+			return m ? m[2] : null;
 		}
-		return m ? m[1] : null;
 	},
 	getCommonHeader: () => {
 		try { // hoge?.fuga... はGreasyforkの文法チェックで弾かれるのでまだ使えない
@@ -2405,7 +2408,7 @@ isLoginLegacy: () => {
 			'';
 		window.open(url, '_blank', 'width=550, height=480, left=100, top50, personalbar=0, toolbar=0, scrollbars=1, sizable=1', 0);
 	},
-	isGinzaWatchUrl: url => /^https?:\/\/www\.nicovideo\.jp\/watch\//.test(url || location.href),
+	isGinzaWatchUrl: url => /^https?:\/\/www\.nicovideo\.jp\/(watch|shorts)\//.test(url || location.href),
 	getNicoHistory: window.decodeURIComponent(document.cookie.replace(/^.*(nicohistory[^;+]).*?/, '')),
 	getMypageVer: () => document.querySelector('#js-initial-userpage-data') ? 'spa' : 'legacy'
 };
@@ -5553,6 +5556,13 @@ const {SettingPanelElement} = (() => {
 							data-setting-name="commentLayer.easyCommentOpacity" data-type="number"
 						>
 					</label>
+					<label>
+						AIキャラクターコメント
+						<input type="range" value=${conf.commentLayer.aiCommentOpacity}
+							min="0.1" max="1.0" step="0.1"
+							data-setting-name="commentLayer.aiCommentOpacity" data-type="number"
+						>
+					</label>
 				</div>
 				<div class="control">
 					<h3>コメントの影</h3>
@@ -5698,6 +5708,13 @@ const {SettingPanelElement} = (() => {
 								value="">
 								かんたんコメント
 						</label>
+						<label class="short">
+							<input type="checkbox"
+								data-setting-name="filter.fork3"
+								?checked=${conf.filter.fork3}
+								value="">
+								AIキャラクターコメント
+						</label>
 						<h4>種類</h4>
 						<label class="short">
 							<input type="checkbox"
@@ -5733,6 +5750,13 @@ const {SettingPanelElement} = (() => {
 								?checked=${conf.filter.easyThread}
 								value="">
 								かんたんコメント
+						</label>
+						<label class="short">
+							<input type="checkbox"
+								data-setting-name="filter.aiThread"
+								?checked=${conf.filter.aiThread}
+								value="">
+								AIキャラクターコメント
 						</label>
 						<!--
 						<label class="short">
@@ -8691,6 +8715,7 @@ const {ThreadLoader} = (() => {
 		0: 'main',
 		1: 'owner',
 		2: 'easy',
+		3: 'ai',
 	}
 	class ThreadLoader {
 		constructor() {
@@ -9329,11 +9354,13 @@ class NicoVideoPlayer extends Emitter {
 				fork0: conf.props['filter.fork0'],
 				fork1: conf.props['filter.fork1'],
 				fork2: conf.props['filter.fork2'],
+				fork3: conf.props['filter.fork3'],
 				defaultThread: conf.props['filter.defaultThread'],
 				ownerThread: conf.props['filter.ownerThread'],
 				communityThread: conf.props['filter.communityThread'],
 				nicosThread: conf.props['filter.nicosThread'],
 				easyThread: conf.props['filter.easyThread'],
+				aiThread: conf.props['filter.aiThread'],
 				extraDefaultThread: conf.props['filter.extraDefaultThread'],
 				extraOwnerThread: conf.props['filter.extraOwnerThread'],
 				extraCommunityThread: conf.props['filter.extraCommunityThread'],
@@ -14222,7 +14249,7 @@ util.addStyle(`
 	.listContainer .nicoChat.fork1 .vposTime {
 		color: #6f6;
 	}
-	.listContainer .nicoChat.fork2 .vposTime {
+	.listContainer .nicoChat:where(.fork2, .fork3) .vposTime {
 		color: #66f;
 	}
 	.listContainer .nicoChat .no,
@@ -15270,8 +15297,13 @@ class NicoChat {
 		props.thread = data.thread * 1;
 		props.isPremium = data.premium ? '1' : '0';
 		props.isSubThread = (options.mainThreadId && props.thread !== options.mainThreadId);
-		props.layerId = typeof data.layerId === 'number' ?
-			data.layerId : (props.fork*1 % 2 /* fork2を0と同じレイヤーにするダメ対応. fork3とか4とか来たらまた考える */);
+		if (typeof data.layerId === 'number') {
+			props.layerId = data.layerId;
+		} else if (props.fork > 1) {
+			props.layerId = 0;
+		} else {
+			props.layerId = props.fork;
+		}
 		props.uniqNo =
 			(data.no                 %   10000) +
 			(data.fork               *  100000) +
@@ -16239,11 +16271,13 @@ class NicoChatFilter extends Emitter {
 		this._fork0 = typeof params.fork0 === 'boolean' ? params.fork0 : true;
 		this._fork1 = typeof params.fork1 === 'boolean' ? params.fork1 : true;
 		this._fork2 = typeof params.fork2 === 'boolean' ? params.fork2 : true;
+		this._fork3 = typeof params.fork3 === 'boolean' ? params.fork3 : true;
 		this._defaultThread = typeof params.defaultThread === 'boolean' ? params.defaultThread : true;
 		this._ownerThread = typeof params.ownerThread === 'boolean' ? params.ownerThread : true;
 		this._communityThread = typeof params.communityThread === 'boolean' ? params.communityThread : true;
 		this._nicosThread = typeof params.nicosThread === 'boolean' ? params.nicosThread : true;
 		this._easyThread = typeof params.easyThread === 'boolean' ? params.easyThread : true;
+		this._aiThread = typeof params.aiThread === 'boolean' ? params.aiThread : true;
 		this._extraDefaultThread = typeof params.extraDefaultThread === 'boolean' ? params.extraDefaultThread : true;
 		this._extraOwnerThread = typeof params.extraOwnerThread === 'boolean' ? params.extraOwnerThread : true;
 		this._extraCommunityThread = typeof params.extraCommunityThread === 'boolean' ? params.extraCommunityThread : true;
@@ -16300,6 +16334,13 @@ class NicoChatFilter extends Emitter {
 		this._fork2 = v;
 		this.refresh();
 	}
+	get fork3() { return this._fork3; }
+	set fork3(v) {
+		v = !!v;
+		if (this._fork3 === v) { return; }
+		this._fork3 = v;
+		this.refresh();
+	}
 	get defaultThread() { return this._defaultThread; }
 	set defaultThread(v) {
 		v = !!v;
@@ -16333,6 +16374,13 @@ class NicoChatFilter extends Emitter {
 		v = !!v;
 		if (this._easyThread === v) { return; }
 		this._easyThread = v;
+		this.refresh();
+	}
+	get aiThread() { return this._aiThread; }
+	set aiThread(v) {
+		v = !!v;
+		if (this._aiThread === v) { return; }
+		this._aiThread = v;
 		this.refresh();
 	}
 	get extraDefaultThread() { return this._extraDefaultThread; }
@@ -16583,6 +16631,7 @@ class NicoChatFilter extends Emitter {
 			!this.fork0 && 0,
 			!this.fork1 && 1,
 			!this.fork2 && 2,
+			!this.fork3 && 3,
 		].filter(type => type !== false);
 		const denyThreadTypes = [
 			!this.defaultThread        && 'default',
@@ -16590,6 +16639,7 @@ class NicoChatFilter extends Emitter {
 			!this.communityThread      && 'community',
 			!this.nicosThread          && 'nicos',
 			!this.easyThread           && 'easy',
+			!this.aiThread             && 'ai',
 			!this.extraDefaultThread   && 'extra-default',
 			!this.extraOwnerThread     && 'extra-owner',
 			!this.extraCommunityThread && 'extra-community',
@@ -17731,6 +17781,15 @@ class NicoCommentCss3PlayerView extends Emitter {
 					}
 				, 100)
 			);
+			this._config.onkey('aiCommentOpacity',
+				_.debounce(
+					v => {
+						console.nicoru('update aiCommentOpacity', v, this._config.aiCommentOpacity, commentLayerOuter);
+						cssUtil.setProps(
+						[commentLayerOuter, '--ai-comment-opacity', cssUtil.number(v * 1)]);
+					}
+				, 100)
+			);
 			self.console.timeEnd('initialize NicoCommentCss3PlayerView');
 		};
 		this._view = iframe;
@@ -17941,8 +18000,9 @@ class NicoCommentCss3PlayerView extends Emitter {
 		const commentLayer = this.commentLayer;
 		const elements = this.removingElements;
 		const af = this.window.Array.from; // prototype.js汚染を警戒
-		let inViewElements =  // 表示上限オーバー時、かんたんコメントが優先的に消えるように
-			af(commentLayer.querySelectorAll('.nicoChat.fork2'))
+		let inViewElements =  // 表示上限オーバー時、AIキャラクターコメントとかんたんコメントが優先的に消えるように
+			af(commentLayer.querySelectorAll('.nicoChat.fork3'))
+				.concat(af(commentLayer.querySelectorAll('.nicoChat.fork2')))
 				.concat(af(commentLayer.querySelectorAll('.nicoChat.fork0')));
 		for (let i = inViewElements.length - max - 1; i >= 0; i--) {
 			elements.push(inViewElements[i]);
@@ -18088,6 +18148,7 @@ NicoCommentCss3PlayerView.__TPL__ = ((Config) => {
 	let ownerShadowColor = Config.props['commentLayer.ownerCommentShadowColor'];
 	ownerShadowColor = ownerShadowColor.replace(/([^a-z^0-9^#])/ig, '');
 	let easyCommentOpacity = Config.props['commentLayer.easyCommentOpacity'];
+	let aiCommentOpacity = Config.props['commentLayer.aiCommentOpacity'];
 	let textShadowColor = '#000';
 	let textShadowGray = '#888';
 	return (`
@@ -18404,6 +18465,9 @@ body.in-capture .commentLayer {
 }
 .nicoChat.fork2 {
 	opacity: var(--easy-comment-opacity, ${easyCommentOpacity}) !important;
+}
+.nicoChat.fork3 {
+	opacity: var(--ai-comment-opacity, ${aiCommentOpacity}) !important;
 }
 .nicoChat.blink {
 	border: 1px solid #f00;
@@ -20172,7 +20236,7 @@ const CommentListItemView = (() => {
 			.commentListItem.fork1 .timepos {
 				text-shadow: 1px 1px 0 #008800, -1px -1px 0 #008800 !important;
 			}
-			.commentListItem.fork2 .timepos {
+			.commentListItem:where(.fork2, .fork3) .timepos {
 				opacity: 0.6;
 			}
 			.commentListItem.fork1 .text {
@@ -24911,11 +24975,13 @@ class NicoVideoPlayerDialog extends Emitter {
 			case 'filter.fork0':
 			case 'filter.fork1':
 			case 'filter.fork2':
+			case 'filter.fork3':
 			case 'filter.defaultThread':
 			case 'filter.ownerThread':
 			case 'filter.communityThread':
 			case 'filter.nicosThread':
 			case 'filter.easyThread':
+			case 'filter.aiThread':
 			case 'filter.extraDefaultThread':
 			case 'filter.extraOwnerThread':
 			case 'filter.extraCommunityThread':
@@ -28008,10 +28074,11 @@ class VideoInfoPanel extends Emitter {
 			}
 		}
 		const decorateWatchLink = watchLink => {
-			const videoId = watchLink.textContent.replace('watch/', '');
+			const videoId = watchLink.textContent.replace('watch/', '').replace('shorts/', '');
 			if (
-				!/^(sm|nm|so|)[0-9]+$/.test(videoId) ||
-				!['www.nicovideo.jp'].includes(watchLink.hostname) || !watchLink.pathname.startsWith('/watch/')) {
+				!/^(sm|nm|so|ss)[0-9]+$/.test(videoId) ||
+				!['www.nicovideo.jp'].includes(watchLink.hostname) ||
+				!(watchLink.pathname.startsWith('/watch/') || watchLink.pathname.startsWith('/shorts/'))) {
 				return;
 			}
 			watchLink.classList.add('noHoverMenu');
@@ -30534,7 +30601,7 @@ class HoverMenu {
 		return this._playerPromise;
 	}
 	_closest(target) {
-		return target.closest('a[href*="watch/"],a[href*="nico.ms/"],.UadVideoItem-link');
+		return target.closest('a[href*="watch/"],a[href*="shorts/"],a[href*="nico.ms/"],.UadVideoItem-link');
 	}
 	_onHover (e) {
 		const target = this._closest(e.target);
@@ -30621,7 +30688,7 @@ class HoverMenu {
 			};
 			userPageIntercept = e => {
 				const target = e.target;
-				if (target.tagName !== 'A' || !target.closest('.TimelineItem_video')) {
+				if (target.tagName !== 'A' || !target.closest('.TimelineItem_video,.TimelineItem_shortVideo')) {
 					return;
 				}
 				target.removeEventListener('click', blockNavigation);
@@ -30650,7 +30717,7 @@ class HoverMenu {
 			if (watchId.startsWith('lv')) {
 				return;
 			}
-			if (target.closest('.TimelineItem_video')) {
+			if (target.closest('.TimelineItem_video,.TimelineItem_shortVideo')) {
 				e.stopPropagation();
 			}
 			e.preventDefault();
