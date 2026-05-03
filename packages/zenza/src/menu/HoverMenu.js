@@ -49,7 +49,7 @@ class HoverMenu {
     return this._playerPromise;
   }
   _closest(target) {
-    return target.closest('a[href*="watch/"],a[href*="shorts/"],a[href*="nico.ms/"],.UadVideoItem-link');
+    return target.closest('a[href*="/watch/"],a[href*="/shorts/"],a[href*="//nico.ms/"],.UadVideoItem-link');
   }
   _onHover (e) {
     const target = this._closest(e.target);

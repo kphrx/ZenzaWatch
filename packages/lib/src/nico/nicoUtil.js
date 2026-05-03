@@ -105,7 +105,7 @@ const nicoUtil = {
       let m = /\/\/nico\.ms\/([a-z0-9]+)/.exec(url);
       return m ? m[1] : null;
      } else {
-      let m = /\/?(watch|shorts)\/([a-z0-9]+)/.exec(url || location.pathname);
+      let m = /\/(watch|shorts)\/([a-z0-9]+)/.exec(url || location.pathname);
       return m ? m[2] : null;
     }
   },

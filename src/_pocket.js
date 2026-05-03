@@ -2658,7 +2658,7 @@ Object.assign(util, textUtil);
           e.target.tagName === 'A' ? e.target : e.target.closest('a');
         if (!target) { return false; }
         const href = target.href || '';
-        if (!/((watch|shorts)\/[a-z0-9]+|nico\.ms\/[a-z0-9]+)/.test(href)) { return false; }
+        if (!/\/((watch|shorts)\/[a-z0-9]+|\/nico\.ms\/[a-z0-9]+)/.test(href)) { return false; }
         return target;
       }
 
@@ -3070,10 +3070,10 @@ Object.assign(util, textUtil);
 
       _createDescription(elm, data) {
         elm.innerHTML = util.httpLink(data);
-        const watchReg = /(watch|shorts)\/([a-z0-9]+)/;
+        const watchReg = /\/(watch|shorts)\/([a-z0-9]+)/;
         const isZenzaReady = this._isZenzaReady;
         //if (util.isFirefox()) { return; }
-        Array.from(elm.querySelectorAll('.videoLink[href*="watch/"],.videoLink[href*="shorts/"]')).forEach((link) => {
+        Array.from(elm.querySelectorAll('.videoLink[href*="/watch/"],.videoLink[href*="/shorts/"]')).forEach((link) => {
           const href = link.getAttribute('href');
           if (!watchReg.test(href)) { return; }
           const watchId = RegExp.$2;
@@ -3763,7 +3763,7 @@ Object.assign(util, textUtil);
           item.dataset.decorationVideoId;
         const ignore = () => item.classList.add('is-ng-ignore');
         if (!watchId) {
-          const a = item instanceof HTMLAnchorElement ? item : item.querySelector('a[href*=\'watch/\'],a[href*="shorts/"]');
+          const a = item instanceof HTMLAnchorElement ? item : item.querySelector('a[href*="/watch/"],a[href*="/shorts/"]');
           let m;
           if (a != null &&
               a.hostname === 'www.nicovideo.jp' &&
@@ -3899,14 +3899,14 @@ Object.assign(util, textUtil);
                 item.dataset.param = item.dataset.videoId = info.id;
                 item.href = `https://www.nicovideo.jp/watch/${info.id}`;
               }
-              for (let a of item.querySelectorAll(`a[href*="watch/${watchId}"]`)) {
+              for (let a of item.querySelectorAll(`a[href*="/watch/${watchId}"]`)) {
                 let href = a.getAttribute('href');
-                href = href.replace(/watch\/([0-9]+)/, `watch/${info.id}`);
+                href = href.replace(/\/watch\/([0-9]+)/, `/watch/${info.id}`);
                 a.setAttribute('href', href.replace(/^http:/, 'https:'));
               }
-              for (let a of item.querySelectorAll(`a[href*="shorts/${watchId}"]`)) {
+              for (let a of item.querySelectorAll(`a[href*="/shorts/${watchId}"]`)) {
                 let href = a.getAttribute('href');
-                href = href.replace(/shorts\/([0-9]+)/, `shorts/${info.id}`);
+                href = href.replace(/\/shorts\/([0-9]+)/, `/shorts/${info.id}`);
                 a.setAttribute('href', href.replace(/^http:/, 'https:'));
               }
             }
