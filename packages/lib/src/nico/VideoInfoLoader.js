@@ -16,42 +16,25 @@ const VideoInfoLoader = (function () {
   const cacheStorage = new CacheStorage(sessionStorage);
 
   const parseWatchApiData = function (json) {
-    const _data = json.data.response;
+    const _data = json.data.response.$watchV4.data;
     const {
-      // ads,
-      // category,
-      channel, // nullable
       client: {
         // nicosid,
         watchId,
         watchTrackId,
       },
       comment: {
-        // isAttentionRequired,
-        keys: {
-          userKey,
-        },
+        // assist,
         layers,
         ng: {
-          channel: channelNg,
           // ngScore,
-          owner: ownerNg,
+          owner: ngFilters,
           // viewer,
         },
         nvComment,
-        server: {
-          url: commentServer,
-        },
         threads,
       },
       community, // nullable
-      // easyComment,
-      external: {
-        commons: {
-          hasContentTree,
-        },
-        // ichiba,
-      },
       genre: {
         // isDisabled,
         // isImmoral,
@@ -59,36 +42,41 @@ const VideoInfoLoader = (function () {
         key: genreKey,
         // label,
       },
-      // marquee,
-      media: {
-        delivery: dmcInfo, // nullable
-        // deliveryLegacy,
-        domand: domandInfo, // nullable
-      },
+      media: domandInfo, // nullable
       // okReason,
-      owner, // nullable
-      payment: {
-        // preview,
-        video: {
-          // commentableUserType,
-          isAdmission: isMemberFree,
-          isPpv: isNeedPayment,
-          isPremium: isPremiumFree,
-          // watchableUserType,
+      metadata: {
+        jsonLd: {
+          owner: ownerInfo,
+          // videoObject,
         },
+        // gtm,
       },
-      // pcWatchPage,
+      payment: {
+        ppv: {
+          isEnabled: isNeedPayment,
+          // showPromotion,
+        },
+        admission: {
+          isEnabled: isMemberFree,
+          // showPromotion,
+        },
+        // continuationBenefit,
+        premium: {
+          isEnabled: isPremiumFree,
+          // showPromotion,
+        },
+        // watchableUserType,
+        // commentableUserType,
+        // billingType,
+      },
+      // baseVideo,
       player: {
         // comment,
         initialPlayback, // nullable
         // layerMode,
       },
-      // ppv,
-      // ranking,
-      series,
-      // smartphone,
       // system,
-      tag: {
+      tags: {
         edit: tagEdit,
         // hasR18Tag,
         // isPublishedNicoscript,
@@ -96,8 +84,6 @@ const VideoInfoLoader = (function () {
         // viewer,
       },
       video: {
-        // 9d091f87, // version hash?
-        // commentableUserTypeForPayment,
         count: {
           comment: commentCount,
           like: likeCount,
@@ -105,26 +91,31 @@ const VideoInfoLoader = (function () {
           view: viewCount,
         },
         description,
+        // supplements,
         duration,
         id: videoId,
-        // isAuthenticationRequired,
-        // isDeleted,
-        // isEmbedPlayerAllowed,
-        // isGiftAllowed,
-        // isNoBanner,
-        // isPrivate,
-        // rating,
+        // contentType,
+        permission: {
+          isPrivate,
+          isDeleted,
+          isAuthenticationRequired,
+          isEmbedPlayerAllowed,
+          isGiftAllowed,
+          // isNgForVocacolleApp,
+          // rating,
+        },
         registeredAt,
         thumbnail: {
-          largeUrl: thumbnailUrl, // null
-          // middleUrl,
+          large: thumbnailUrl, // null
+          // middle,
           // ogp,
-          url: thumbnail,
+          normal: thumbnail,
           player: largeThumbnail,
+          // short,
         },
         title,
         viewer: videoStatusForViewer, // nullable
-        // watchableUserTypeForPayment,
+        isLikedByViewer: isLiked,
       },
       // videoAds,
       // videoLive,
@@ -132,12 +123,13 @@ const VideoInfoLoader = (function () {
       // waku,
     } = _data;
 
-    const hasLargeThumbnail = nicoUtil.hasLargeThumbnail(videoId);
+    const commentServer = null;
+    const userKey = null;
     const csrfToken = null;
     const watchAuthKey = null;
     threads.forEach(thread => {
-      thread.layer = layers.find(({threadIds}) => {
-        return threadIds.some(({id, fork}) => id === thread.id && fork === thread.fork);
+      thread.layer = layers.find(({components}) => {
+        return components.some(({threadId, fork}) => threadId === thread.id && fork === thread.fork);
       });
     });
     const resumeInfo = (() => {
@@ -150,7 +142,6 @@ const VideoInfoLoader = (function () {
         initialPlaybackPosition: positionSec ?? 0,
       };
     })();
-    const isLiked = videoStatusForViewer?.like.isLiked ?? false;
     const viewerInfo = (() => {
       const {
         id = 0,
@@ -158,7 +149,7 @@ const VideoInfoLoader = (function () {
       } = { ...viewer };
       return { id, isPremium };
     })();
-    const defaultThread = threads.find(t => t.isDefaultPostTarget);
+    const defaultThread = threads.find(t => t.isPostTarget);
     const msgInfo = {
       server: commentServer,
       threadId: defaultThread.id,
@@ -178,7 +169,7 @@ const VideoInfoLoader = (function () {
       frontendVersion: 0
     };
 
-    const isDmc = dmcInfo?.movie.session != null;
+    const isDmc = false;
     const isDomand = domandInfo != null;
     const isPlayable = isDmc || isDomand;
 
@@ -202,56 +193,6 @@ const VideoInfoLoader = (function () {
       }
     });
 
-    let channelInfo, channelId, uploaderInfo = null;
-    if (channel) {
-      const {
-        id,
-        // isDisplayAdBanner,
-        // isOfficialAnime,
-        name,
-        thumbnail: {
-          smallUrl,
-          url,
-        },
-        // viewer: {
-        //   follow: {
-        //     isBookmarked,
-        //     isFollowed,
-        //     token,
-        //     tokenTimestamp,
-        //   },
-        // },
-      } = { ...channel };
-      channelInfo = {
-        iconUrl: smallUrl ?? url ?? undefined,
-        id,
-        linkId: id,
-        name,
-      };
-      channelId = id;
-    }
-    if (owner) {
-      const {
-        // channel,
-        iconUrl,
-        id,
-        // isMylistsPublic,
-        // isVideosPublic,
-        // live,
-        nickname,
-        // videoLiveNotice,
-        // viewer: {
-        //   isFollowing,
-        // },
-      } = { ...owner };
-      uploaderInfo = {
-        iconUrl,
-        id,
-        linkId: `user/${id}`,
-        name: nickname,
-      };
-    }
-
     const watchApiData = {
       videoDetail: {
         v: watchId,
@@ -265,16 +206,15 @@ const VideoInfoLoader = (function () {
         largeThumbnail,
         length: duration,
 
-        commons_tree_exists: hasContentTree,
+        commons_tree_exists: true,
 
         // width: data.video.width, // dmcInfo?.movie.videos[0].metadata.resolution.width
         // height: data.video.height, // dmcInfo?.movie.videos[0].metadata.resolution.height
 
-        isChannel: channel && channel.id,
+        isChannel: ownerInfo.type === "channel",
         isMymemory: false,
         communityId: community?.id ?? null,
         isLiked,
-        channelId,
 
         commentCount,
         likeCount,
@@ -285,19 +225,15 @@ const VideoInfoLoader = (function () {
         tagEdit,
       },
       viewerInfo,
-      channelInfo,
-      uploaderInfo,
+      ownerInfo,
       clientTrackId: watchTrackId,
     };
-
-    const ngFilters = Array.prototype.concat(channelNg, ownerNg);
 
     const result = {
       _format: 'html5watchApi',
       _data,
       watchApiData,
       domandInfo,
-      dmcInfo,
       msgInfo,
       playlist,
       isPlayable,
@@ -341,7 +277,6 @@ const VideoInfoLoader = (function () {
       .then(json => {
         const data = parseWatchApiData(json);
         //window.console.info('linkedChannelData', data);
-        originalData.dmcInfo = data.dmcInfo;
         originalData.domandInfo = data.domandInfo;
         originalData.isPlayable = data.isPlayable;
         originalData.isDmc = data.isDmc;

@@ -38,8 +38,12 @@ class DomandInfo extends JSONable {
     return this._rawData.accessRightKey || '';
   }
 
+  get contents() {
+    return this._rawData.contents;
+  }
+
   get audios() {
-    return this._rawData.audios.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
+    return this.contents.audios.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
   }
 
   get availableAudios() {
@@ -51,7 +55,7 @@ class DomandInfo extends JSONable {
   }
 
   get videos() {
-    return this._rawData.videos.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
+    return this.contents.videos.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
   }
 
   get availableVideos() {
@@ -389,7 +393,7 @@ class VideoInfoModel extends JSONable {
   }
 
   get isChannel() {
-    return !!this._videoDetail.channelId;
+    return !!this._videoDetail.isChannel;
   }
 
   get isMymemory() {
@@ -474,33 +478,33 @@ class VideoInfoModel extends JSONable {
   get owner() {
     if (this.isChannel) {
       let {
-        iconUrl: icon = 'https://secure-dcdn.cdn.nimg.jp/nicoaccount/usericon/defaults/blank.jpg',
+        iconUrl = 'https://secure-dcdn.cdn.nimg.jp/nicoaccount/usericon/defaults/blank.jpg',
         id,
-        linkId = '',
+        type,
         name,
-      } = {...this._watchApiData.channelInfo};
+      } = {...this._watchApiData.ownerInfo};
       return {
-        type: 'channel',
-        url: `https://ch.nicovideo.jp/${linkId}`,
-        icon,
+        type,
+        url: `https://ch.nicovideo.jp/${id}`,
+        icon: iconUrl,
         id,
-        linkId,
+        linkId: id,
         name,
       };
     } else {
       // 退会しているユーザーだと空になっている
       let {
-        iconUrl: icon = 'https://secure-dcdn.cdn.nimg.jp/nicoaccount/usericon/defaults/blank.jpg',
+        iconUrl = 'https://secure-dcdn.cdn.nimg.jp/nicoaccount/usericon/defaults/blank.jpg',
         id,
-        linkId = '',
+        type,
         name = '(非公開ユーザー)',
-      } = {...this._watchApiData.uploaderInfo};
+      } = {...this._watchApiData.ownerInfo};
       return {
-        type: 'user',
-        url: id ? `https://www.nicovideo.jp/${linkId}` : '#',
-        icon,
+        type,
+        url: id ? `https://www.nicovideo.jp/user/${id}` : '#',
+        icon: iconUrl,
         id,
-        linkId,
+        linkId: `user/${id}`,
         name,
       };
     }
