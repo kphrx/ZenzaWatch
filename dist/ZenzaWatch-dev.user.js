@@ -32,7 +32,7 @@
 // @exclude        *://ext.nicovideo.jp/thumb_channel/*
 // @grant          none
 // @author         segabito
-// @version        2.6.3-fix-playlist.53
+// @version        2.6.3-fix-playlist.54
 // @run-at         document-body
 // @require        https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js
 // @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaWatch-dev.user.js
@@ -101,7 +101,7 @@ AntiPrototypeJs();
     let {dimport, workerUtil, IndexedDbStorage, Handler, PromiseHandler, Emitter, parseThumbInfo, WatchInfoCacheDb, StoryboardCacheDb, VideoSessionWorker} = window.ZenzaLib;
     START_PAGE_QUERY = decodeURIComponent(START_PAGE_QUERY);
 
-    var VER = '2.6.3-fix-playlist.53';
+    var VER = '2.6.3-fix-playlist.54';
     const ENV = 'DEV';
 
 
@@ -6270,54 +6270,48 @@ const CacheStorage = (() => {
 const VideoInfoLoader = (function () {
 	const cacheStorage = new CacheStorage(sessionStorage);
 	const parseWatchApiData = function (json) {
-		const _data = json.data.response;
+		const _data = json.data.response.$watchV4.data;
 		const {
-			channel, // nullable
 			client: {
 				watchId,
 				watchTrackId,
 			},
 			comment: {
-				keys: {
-					userKey,
-				},
 				layers,
 				ng: {
-					channel: channelNg,
-					owner: ownerNg,
+					owner: ngFilters,
 				},
 				nvComment,
-				server: {
-					url: commentServer,
-				},
 				threads,
 			},
 			community, // nullable
-			external: {
-				commons: {
-					hasContentTree,
-				},
-			},
 			genre: {
 				key: genreKey,
 			},
-			media: {
-				delivery: dmcInfo, // nullable
-				domand: domandInfo, // nullable
+			media: domandInfo, // nullable
+			metadata: {
+				jsonLd: {
+					owner: ownerInfo,
+				},
 			},
-			owner, // nullable
 			payment: {
-				video: {
-					isAdmission: isMemberFree,
-					isPpv: isNeedPayment,
-					isPremium: isPremiumFree,
+				ppv: {
+					isEnabled: isNeedPayment,
+				},
+				admission: {
+					isEnabled: isMemberFree,
+				},
+				premium: {
+					isEnabled: isPremiumFree,
 				},
 			},
 			player: {
 				initialPlayback, // nullable
 			},
-			series,
-			tag: {
+			lazy: {
+				authKey: additionalInfoKey,
+			},
+			tags: {
 				edit: tagEdit,
 				items: tags,
 			},
@@ -6331,23 +6325,32 @@ const VideoInfoLoader = (function () {
 				description,
 				duration,
 				id: videoId,
+				permission: {
+					isPrivate,
+					isDeleted,
+					isAuthenticationRequired,
+					isEmbedPlayerAllowed,
+					isGiftAllowed,
+				},
 				registeredAt,
 				thumbnail: {
-					largeUrl: thumbnailUrl, // null
-					url: thumbnail,
+					large: thumbnailUrl, // null
+					normal: thumbnail,
 					player: largeThumbnail,
 				},
 				title,
 				viewer: videoStatusForViewer, // nullable
+				isLikedByViewer: isLiked,
 			},
 			viewer, // nullable
 		} = _data;
-		const hasLargeThumbnail = nicoUtil.hasLargeThumbnail(videoId);
+		const commentServer = null;
+		const userKey = null;
 		const csrfToken = null;
 		const watchAuthKey = null;
 		threads.forEach(thread => {
-			thread.layer = layers.find(({threadIds}) => {
-				return threadIds.some(({id, fork}) => id === thread.id && fork === thread.fork);
+			thread.layer = layers.find(({components}) => {
+				return components.some(({threadId, fork}) => threadId === thread.id && fork === thread.fork);
 			});
 		});
 		const resumeInfo = (() => {
@@ -6360,7 +6363,6 @@ const VideoInfoLoader = (function () {
 				initialPlaybackPosition: positionSec ?? 0,
 			};
 		})();
-		const isLiked = videoStatusForViewer?.like.isLiked ?? false;
 		const viewerInfo = (() => {
 			const {
 				id = 0,
@@ -6368,7 +6370,7 @@ const VideoInfoLoader = (function () {
 			} = { ...viewer };
 			return { id, isPremium };
 		})();
-		const defaultThread = threads.find(t => t.isDefaultPostTarget);
+		const defaultThread = threads.find(t => t.isPostTarget);
 		const msgInfo = {
 			server: commentServer,
 			threadId: defaultThread.id,
@@ -6387,7 +6389,7 @@ const VideoInfoLoader = (function () {
 			frontendId: 6,
 			frontendVersion: 0
 		};
-		const isDmc = dmcInfo?.movie.session != null;
+		const isDmc = false;
 		const isDomand = domandInfo != null;
 		const isPlayable = isDmc || isDomand;
 		cacheStorage.setItem('csrfToken', csrfToken, 30 * 60 * 1000);
@@ -6405,37 +6407,6 @@ const VideoInfoLoader = (function () {
 				name,
 			}
 		});
-		let channelInfo, channelId, uploaderInfo = null;
-		if (channel) {
-			const {
-				id,
-				name,
-				thumbnail: {
-					smallUrl,
-					url,
-				},
-			} = { ...channel };
-			channelInfo = {
-				iconUrl: smallUrl ?? url ?? undefined,
-				id,
-				linkId: id,
-				name,
-			};
-			channelId = id;
-		}
-		if (owner) {
-			const {
-				iconUrl,
-				id,
-				nickname,
-			} = { ...owner };
-			uploaderInfo = {
-				iconUrl,
-				id,
-				linkId: `user/${id}`,
-				name: nickname,
-			};
-		}
 		const watchApiData = {
 			videoDetail: {
 				v: watchId,
@@ -6446,12 +6417,11 @@ const VideoInfoLoader = (function () {
 				thumbnail,
 				largeThumbnail,
 				length: duration,
-				commons_tree_exists: hasContentTree,
-				isChannel: channel && channel.id,
+				commons_tree_exists: true,
+				isChannel: ownerInfo.type === "channel",
 				isMymemory: false,
 				communityId: community?.id ?? null,
 				isLiked,
-				channelId,
 				commentCount,
 				likeCount,
 				mylistCount,
@@ -6460,17 +6430,15 @@ const VideoInfoLoader = (function () {
 				tagEdit,
 			},
 			viewerInfo,
-			channelInfo,
-			uploaderInfo,
+			ownerInfo,
+			additionalInfoKey,
 			clientTrackId: watchTrackId,
 		};
-		const ngFilters = Array.prototype.concat(channelNg, ownerNg);
 		const result = {
 			_format: 'html5watchApi',
 			_data,
 			watchApiData,
 			domandInfo,
-			dmcInfo,
 			msgInfo,
 			playlist,
 			isPlayable,
@@ -6479,7 +6447,6 @@ const VideoInfoLoader = (function () {
 			thumbnailUrl,
 			csrfToken,
 			watchAuthKey,
-			series,
 			genreKey,
 			ngFilters,
 			isMemberFree,
@@ -6490,6 +6457,32 @@ const VideoInfoLoader = (function () {
 		};
 		emitter.emitAsync('csrfTokenUpdate', csrfToken);
 		return result;
+	};
+	const loadAdditionalWatchData = (data) => {
+		const videoId = data.videoDetail.id;
+		const url = `https://nvapi.nicovideo.jp/v4/watch/lazy/${videoId}`;
+		return new Promise(r => {
+			setTimeout(r, 1000);
+		}).then(() => netUtil.fetch(url, {
+			method: 'POST',
+			headers: {
+				'X-Frontend-Id': 6,
+				'X-Frontend-Version': 0,
+				'X-Niconico-Language': 'ja-jp',
+				'X-Request-With': 'https://www.nicovideo.jp',
+				'Content-Type': 'application/json',
+			},
+			credentials: 'include',
+			body: JSON.stringify({
+				actionTrackId: data.clientTrackId,
+				keyToken: data.additionalInfoKey,
+			}),
+		}))
+			.then(res => res.json())
+			.then(json => json.data)
+			.catch(() => {
+				return Promise.reject({reason: 'network', message: '通信エラー(loadAdditionalWatchData)'});
+			});
 	};
 	const loadLinkedChannelVideoInfo = (originalData) => {
 		const linkedChannelVideo = originalData.linkedChannelVideo;
@@ -6507,7 +6500,6 @@ const VideoInfoLoader = (function () {
 			.then(res => res.json())
 			.then(json => {
 				const data = parseWatchApiData(json);
-				originalData.dmcInfo = data.dmcInfo;
 				originalData.domandInfo = data.domandInfo;
 				originalData.isPlayable = data.isPlayable;
 				originalData.isDmc = data.isDmc;
@@ -6521,16 +6513,17 @@ const VideoInfoLoader = (function () {
 	};
 	const onLoadPromise = async (watchId, options, isRetry, resp) => {
 		const data = parseWatchApiData(resp);
-		debug.watchApiData = data;
 		if (!data) {
+			debug.watchApiData = null;
 			throw {
 				reason: 'network',
 				message: '通信エラー。動画情報の取得に失敗しました。(watch api)'
 			};
 		}
-		if (data.reject) {
-			throw data;
-		}
+		const lazy = await loadAdditionalWatchData(data.watchApiData);
+		data._lazy = lazy;
+		data.series = lazy.series;
+		debug.watchApiData = data;
 		if (data.isPlayable) {
 			emitter.emitAsync('loadVideoInfo', data, 'WATCH_API', watchId);
 			return data;
@@ -7122,7 +7115,7 @@ const IchibaLoader = {
 };
 const CommonsTreeLoader = {
 	load: contentId => {
-		const api = 'https://api.commons.nicovideo.jp/tree/summary/get';
+		const api = 'https://api.commons.nicovideo.jp/works/summary/get';
 		const url = `${api}?id=${contentId}&limit=200`;
 		return netUtil.jsonp(url);
 	}
@@ -7488,8 +7481,11 @@ class DomandInfo extends JSONable {
 	get accessRightKey() {
 		return this._rawData.accessRightKey || '';
 	}
+	get contents() {
+		return this._rawData.contents;
+	}
 	get audios() {
-		return this._rawData.audios.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
+		return this.contents.audios.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
 	}
 	get availableAudios() {
 		return this.audios.filter(a => a.isAvailable);
@@ -7498,7 +7494,7 @@ class DomandInfo extends JSONable {
 		return this.availableAudios.map(a => a.id);
 	}
 	get videos() {
-		return this._rawData.videos.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
+		return this.contents.videos.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
 	}
 	get availableVideos() {
 		return this.videos.filter(v => v.isAvailable);
@@ -7760,7 +7756,7 @@ class VideoInfoModel extends JSONable {
 		};
 	}
 	get isChannel() {
-		return !!this._videoDetail.channelId;
+		return !!this._videoDetail.isChannel;
 	}
 	get isMymemory() {
 		return !!this._videoDetail.isMymemory;
@@ -7823,32 +7819,32 @@ class VideoInfoModel extends JSONable {
 	get owner() {
 		if (this.isChannel) {
 			let {
-				iconUrl: icon = 'https://secure-dcdn.cdn.nimg.jp/nicoaccount/usericon/defaults/blank.jpg',
+				iconUrl = 'https://secure-dcdn.cdn.nimg.jp/nicoaccount/usericon/defaults/blank.jpg',
 				id,
-				linkId = '',
+				type,
 				name,
-			} = {...this._watchApiData.channelInfo};
+			} = {...this._watchApiData.ownerInfo};
 			return {
-				type: 'channel',
-				url: `https://ch.nicovideo.jp/${linkId}`,
-				icon,
+				type,
+				url: `https://ch.nicovideo.jp/${id}`,
+				icon: iconUrl,
 				id,
-				linkId,
+				linkId: id,
 				name,
 			};
 		} else {
 			let {
-				iconUrl: icon = 'https://secure-dcdn.cdn.nimg.jp/nicoaccount/usericon/defaults/blank.jpg',
+				iconUrl = 'https://secure-dcdn.cdn.nimg.jp/nicoaccount/usericon/defaults/blank.jpg',
 				id,
-				linkId = '',
+				type,
 				name = '(非公開ユーザー)',
-			} = {...this._watchApiData.uploaderInfo};
+			} = {...this._watchApiData.ownerInfo};
 			return {
-				type: 'user',
-				url: id ? `https://www.nicovideo.jp/${linkId}` : '#',
-				icon,
+				type,
+				url: id ? `https://www.nicovideo.jp/user/${id}` : '#',
+				icon: iconUrl,
 				id,
-				linkId,
+				linkId: `user/${id}`,
 				name,
 			};
 		}
@@ -11142,7 +11138,9 @@ class StoryboardView extends Emitter {
 		);
 	}
 	_updateFail() {
-		ClassList(this._view).remove('is-uccess').add('is-fail');
+		const cl = ClassList(this._view);
+		cl.remove('is-success');
+		cl.add('is-fail');
 	}
 	setCurrentTime(sec, forceUpdate) {
 		const model = this._model;
@@ -30298,7 +30296,7 @@ class RelatedInfoMenu extends BaseViewComponent {
 		this._ginzaLink.setAttribute('href', `//www.nicovideo.jp/watch/${wid}`);
 		this._originalLink.setAttribute('href', `//www.nicovideo.jp/watch/${vid}`);
 		this._twitterLink.setAttribute('href', `https://twitter.com/hashtag/${vid}`);
-		this._parentVideoLink.setAttribute('href', `//commons.nicovideo.jp/tree/${vid}`);
+		this._parentVideoLink.setAttribute('href', `//commons.nicovideo.jp/works/${vid}`);
 		this.emit('close');
 	}
 	_onCommand(command, param) {
@@ -30817,7 +30815,7 @@ class HoverMenu {
 		if (json.meta.status > 299) {
 			return false;
 		}
-		return typeof json.data.response.okReason === 'string';
+		return typeof json.data.response.$watchV4.data.okReason === 'string';
 	};
 	const initWorker = () => {
 		if (!location.host.endsWith('.nicovideo.jp')) { return; }
