@@ -141,7 +141,18 @@ class CrossDomainGate extends Emitter {
   _fetch(url, options) {
     return this._postMessage({command: 'fetch', params: {url, options}});
   }
-  async fetch(url, options = {}) {
+  async fetch(resource, options = {}) {
+    let url = resource;
+    if (resource instanceof URL) {
+      url = resource.toString();
+    } else if (resource instanceof Request) {
+      url = resource.url;
+      options.method ??= resource.method;
+      options.headers ??= resource.headers;
+      options.body ??= resource.body;
+      options.credentials ??= resource.credentials;
+      options.signal ??= resource.signal;
+    }
     const result = await this._fetch(url, options);
     if (typeof result === 'string' || !result.buffer || !result.init || !result.headers) {
       return result;

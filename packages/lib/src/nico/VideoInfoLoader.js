@@ -24,7 +24,7 @@ const VideoInfoLoader = (function () {
       client: {
         // nicosid,
         watchId,
-        // watchTrackId,
+        watchTrackId,
       },
       comment: {
         // isAttentionRequired,
@@ -38,7 +38,7 @@ const VideoInfoLoader = (function () {
           owner: ownerNg,
           // viewer,
         },
-        // nvComment,
+        nvComment,
         server: {
           url: commentServer,
         },
@@ -63,6 +63,7 @@ const VideoInfoLoader = (function () {
       media: {
         delivery: dmcInfo, // nullable
         // deliveryLegacy,
+        domand: domandInfo, // nullable
       },
       // okReason,
       owner, // nullable
@@ -88,17 +89,13 @@ const VideoInfoLoader = (function () {
       // smartphone,
       // system,
       tag: {
-        // edit,
+        edit: tagEdit,
         // hasR18Tag,
         // isPublishedNicoscript,
         items: tags,
         // viewer,
       },
       video: {
-        smileInfo: flvInfo = {}, // smileInfoがない
-        flvInfo: {
-          url: videoUrl = '',
-        } = flvInfo,
         // 9d091f87, // version hash?
         // commentableUserTypeForPayment,
         count: {
@@ -138,13 +135,9 @@ const VideoInfoLoader = (function () {
     const hasLargeThumbnail = nicoUtil.hasLargeThumbnail(videoId);
     const csrfToken = null;
     const watchAuthKey = null;
-    layers.forEach(layer => {
-      layer.threadIds.forEach(({id, fork}) => {
-        threads.forEach(thread => {
-          if (thread.id === id && fork === 0) {
-            thread.layer = layer;
-          }
-        });
+    threads.forEach(thread => {
+      thread.layer = layers.find(({threadIds}) => {
+        return threadIds.some(({id, fork}) => id === thread.id && fork === thread.fork);
       });
     });
     const resumeInfo = (() => {
@@ -170,6 +163,8 @@ const VideoInfoLoader = (function () {
       server: commentServer,
       threadId: defaultThread.id,
       duration,
+      videoId,
+      nvComment,
       userId: viewerInfo.id,
       isNeedKey: threads.findIndex(t => t.isThreadkeyRequired) >= 0, // (isChannel || isCommunity)
       optionalThreadId: '',
@@ -183,7 +178,9 @@ const VideoInfoLoader = (function () {
       frontendVersion: 0
     };
 
-    const isPlayable = !!dmcInfo?.movie.session;
+    const isDmc = dmcInfo?.movie.session != null;
+    const isDomand = domandInfo != null;
+    const isPlayable = isDmc || isDomand;
 
     cacheStorage.setItem('csrfToken', csrfToken, 30 * 60 * 1000);
 
@@ -285,43 +282,33 @@ const VideoInfoLoader = (function () {
         viewCount,
 
         tagList,
+        tagEdit,
       },
       viewerInfo,
       channelInfo,
-      uploaderInfo
+      uploaderInfo,
+      clientTrackId: watchTrackId,
     };
 
-    let ngFilters = Array.prototype.concat(channelNg, ownerNg);
-    if (ngFilters.length) {
-      const ngtmp = [];
-      ngFilters.forEach(ng => {
-        if (!ng.source || !ng.destination) { return; }
-        ngtmp.push(
-          encodeURIComponent(ng.source) + '=' + encodeURIComponent(ng.destination));
-      });
-      flvInfo.ng_up = ngtmp.join('&');
-    }
+    const ngFilters = Array.prototype.concat(channelNg, ownerNg);
 
     const result = {
       _format: 'html5watchApi',
       _data,
       watchApiData,
-      flvInfo,
+      domandInfo,
       dmcInfo,
       msgInfo,
       playlist,
-      isDmcOnly: true,
       isPlayable,
-      isMp4: false,
-      isFlv: false,
-      isSwf: false,
-      isEco: false,
-      isDmc: isPlayable,
+      isDomand,
+      isDmc,
       thumbnailUrl,
       csrfToken,
       watchAuthKey,
       series,
       genreKey,
+      ngFilters,
 
       isMemberFree,
       isNeedPayment,
@@ -340,8 +327,8 @@ const VideoInfoLoader = (function () {
     const originalVideoId = originalData.watchApiData.videoDetail.id;
     const videoId = linkedChannelVideo.linkedVideoId;
 
-    originalData.linkedChannelData = null;
     if (originalVideoId === videoId) {
+      originalData.linkedChannelVideo = null;
       return Promise.reject();
     }
 
@@ -355,16 +342,14 @@ const VideoInfoLoader = (function () {
         const data = parseWatchApiData(json);
         //window.console.info('linkedChannelData', data);
         originalData.dmcInfo = data.dmcInfo;
-        originalData.isDmcOnly = data.isDmcOnly;
+        originalData.domandInfo = data.domandInfo;
         originalData.isPlayable = data.isPlayable;
-        originalData.isMp4 = data.isMp4;
-        originalData.isFlv = data.isFlv;
-        originalData.isSwf = data.isSwf;
-        originalData.isEco = data.isEco;
         originalData.isDmc = data.isDmc;
+        originalData.isDomand = data.isDomand;
         return originalData;
       })
       .catch(() => {
+        originalData.linkedChannelVideo = null;
         return Promise.reject({reason: 'network', message: '通信エラー(loadLinkedChannelVideoInfo)'});
       });
   };

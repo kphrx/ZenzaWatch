@@ -3,8 +3,73 @@ import {PromiseHandler} from '../packages/lib/src/Emitter';
 
 //===BEGIN===
 //
-class DmcInfo {
+class JSONable {
+  toJSON() {
+    const data = Object.create(null);
+    const proto = Object.getPrototypeOf(this);
+
+    for (const prop of Object.getOwnPropertyNames(proto)) {
+      const desc = Object.getOwnPropertyDescriptor(proto, prop);
+      if (typeof desc?.get !== 'function') continue;
+
+      const value = data[prop] = this[prop];
+      if (value == null || typeof value.toJSON !== 'function') continue;
+
+      data[prop] = value.toJSON();
+    }
+
+    return data;
+  }
+}
+
+class DomandInfo extends JSONable {
+  constructor(rawData, videoDetail, linkedChannelVideo) {
+    super();
+    this._rawData = rawData;
+    this._videoDetail = videoDetail;
+    this._linkedChannelVideo = linkedChannelVideo;
+  }
+
+  get videoId() {
+    return this._linkedChannelVideo != null ? this._linkedChannelVideo.linkedVideoId : this._videoDetail.id;
+  }
+
+  get accessRightKey() {
+    return this._rawData.accessRightKey || '';
+  }
+
+  get audios() {
+    return this._rawData.audios.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
+  }
+
+  get availableAudios() {
+    return this.audios.filter(a => a.isAvailable);
+  }
+
+  get availableAudioIds() {
+    return this.availableAudios.map(a => a.id);
+  }
+
+  get videos() {
+    return this._rawData.videos.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
+  }
+
+  get availableVideos() {
+    return this.videos.filter(v => v.isAvailable);
+  }
+
+  get availableVideoIds() {
+    return this.availableVideos.map(v => v.id);
+  }
+
+  get isStoryboardAvailable() {
+    return this._rawData.isStoryboardAvailable;
+  }
+}
+
+class DmcInfo extends JSONable {
   constructor(rawData) {
+    super();
     this._rawData = rawData;
     this._session = rawData.movie.session;
   }
@@ -18,15 +83,27 @@ class DmcInfo {
   }
 
   get audios() {
-    return this._session.audios;
+    return this._rawData.movie.audios.toSorted((a, b) => b.metadata.levelIndex > a.metadata.levelIndex);
+  }
+
+  get availableAudios() {
+    return this.audios.filter(a => a.isAvailable);
+  }
+
+  get availableAudioIds() {
+    return this.availableAudios.map(a => a.id);
   }
 
   get videos() {
-    return this._rawData.movie.videos;
+    return this._rawData.movie.videos.toSorted((a, b) => b.metadata.levelIndex > a.metadata.levelIndex);
   }
 
-  get quality() {
-    return this._rawData.movie.quality;
+  get availableVideos() {
+    return this.videos.filter(v => v.isAvailable);
+  }
+
+  get availableVideoIds() {
+    return this.availableVideos.map(v => v.id);
   }
 
   get signature() {
@@ -108,19 +185,6 @@ class DmcInfo {
   get encryption() {
     return this._rawData.encryption || null;
   }
-
-  getData() {
-    const data = {};
-    for (const prop of Object.getOwnPropertyNames(this.constructor.prototype)) {
-      if (typeof this[prop] === 'function') { continue; }
-      data[prop] = this[prop];
-    }
-    return data;
-  }
-
-  toJSON() {
-    return JSON.stringify(this.getData());
-  }
 }
 
 class VideoFilter {
@@ -180,8 +244,9 @@ class VideoFilter {
   }
 }
 
-class VideoInfoModel {
+class VideoInfoModel extends JSONable {
   constructor(videoInfoData, localCacheData = {}) {
+    super();
     this._update(videoInfoData, localCacheData);
     this._currentVideoPromise = null;
   }
@@ -197,9 +262,10 @@ class VideoInfoModel {
     this._watchApiData = info.watchApiData;
     this._videoDetail = info.watchApiData.videoDetail;
     this._viewerInfo = info.viewerInfo;               // 閲覧者(＝おまいら)の情報
-    this._flvInfo = info.flvInfo;
+    this._ngFilters = info.ngFilters;
     this._msgInfo = info.msgInfo;
     this._dmcInfo = (info.dmcInfo && info.dmcInfo.movie.session) ? new DmcInfo(info.dmcInfo) : null;
+    this._domandInfo = info.domandInfo ? new DomandInfo(info.domandInfo, info.watchApiData.videoDetail, info.linkedChannelVideo) : null;
     this._relatedVideo = info.playlist; // playlistという名前だが実質は関連動画
     this._playlistToken = info.playlistToken;
     this._watchAuthKey = info.watchAuthKey;
@@ -244,18 +310,6 @@ class VideoInfoModel {
     return this._videoDetail.largeThumbnnail;
   }
 
-  get videoUrl() {
-    return (this._flvInfo.url || '');//.replace(/^http:/, '');
-  }
-
-  get storyboardUrl() {
-    let url = this._flvInfo.url;
-    if (!url || !url.match(/smile\?m=/) || url.match(/^rtmp/)) {
-      return null;
-    }
-    return url;
-  }
-
   /**
    * @return Promise
    */
@@ -271,12 +325,12 @@ class VideoInfoModel {
     this._currentVideoPromise && this._currentVideoPromise.resolve(v);
   }
 
-  get isEconomy() {
-    return this.videoUrl.match(/low$/) ? true : false;
-  }
-
   get tagList() {
     return this._videoDetail.tagList;
+  }
+
+  get tagEdit() {
+    return this._videoDetail.tagEdit;
   }
 
   getVideoId() { // sm12345
@@ -357,12 +411,28 @@ class VideoInfoModel {
     return !!(this._videoDetail.commons_tree_exists);
   }
 
-  get isDmc() {
-    return this.isDmcOnly || (this._rawData.isDmc);
+  get isHLSRequired() {
+    if (this.isDmcAvailable) {
+      return this.dmcInfo.isHLSRequired
+    } else {
+      return this.isDomandAvailable;
+    }
+  }
+
+  get actionTrackId() {
+    return this._watchApiData.clientTrackId;
+  }
+
+  get isDomandAvailable() {
+    return this._rawData.isDomand;
   }
 
   get isDmcAvailable() {
     return this._rawData.isDmc;
+  }
+
+  get domandInfo() {
+    return this._domandInfo;
   }
 
   get dmcInfo() {
@@ -373,16 +443,28 @@ class VideoInfoModel {
     return this._msgInfo;
   }
 
+  get isDomandOnly() {
+    return this.isDomandAvailable && !this.isDmcAvailable;
+  }
+
   get isDmcOnly() {
-    return !!this._rawData.isDmcOnly || !this.videoUrl;
+    return this.isDmcAvailable && !this.isDomandAvailable;
+  }
+
+  get hasDomandStoryboard() {
+    return this._domandInfo?.isStoryboardAvailable ?? false;
   }
 
   get hasDmcStoryboard() {
-    return this._dmcInfo && this._dmcInfo.hasStoryboard;
+    return this._dmcInfo?.hasStoryboard ?? false;
   }
 
   get dmcStoryboardInfo() {
     return this.hasDmcStoryboard ? this._dmcInfo.storyboardInfo : null;
+  }
+
+  get hasStoryboard() {
+    return this.hasDomandStoryboard || this.hasDmcStoryboard;
   }
 
   /**
@@ -450,12 +532,12 @@ class VideoInfoModel {
   }
 
   get replacementWords() {
-    if (!this._flvInfo.ng_up || this._flvInfo.ng_up === '') {
-      return null;
-    }
-    return textUtil.parseQuery(
-      this._flvInfo.ng_up || ''
-    );
+    return this._ngFilters.reduce((acc, ng) => {
+      if (ng.source != null && ng.destination != null) {
+        acc[ng.source] = ng.destination;
+      }
+      return acc;
+    }, Object.create({}))
   }
 
   get playlistToken() {
@@ -509,18 +591,8 @@ class VideoInfoModel {
   }
 
   get extension() {
-    if (this.isDmc) {
+    if (this.isDomandAvailable || this.isDmcAvailable) {
       return 'mp4';
-    }
-    const url = this.videoUrl;
-    if (url.match(/smile\?m=/)) {
-      return 'mp4';
-    }
-    if (url.match(/smile\?v=/)) {
-      return 'flv';
-    }
-    if (url.match(/smile\?s=/)) {
-      return 'swf';
     }
     return 'unknown';
   }
@@ -530,74 +602,34 @@ class VideoInfoModel {
   }
 
   get maybeBetterQualityServerType() {
+    if (this.isDomandOnly) {
+      return 'domand';
+    }
     if (this.isDmcOnly) {
       return 'dmc';
     }
-    if (this.isEconomy) {
-      return 'dmc';
+    if (!this.isDmcAvailable) {
+      return 'domand';
     }
-    let dmcInfo = this.dmcInfo;
-    if (!dmcInfo) {
-      return 'smile';
-    }
-    if (/smile\?[sv]=/.test(this.videoUrl)) {
+    if (!this.isDomandAvailable) {
       return 'dmc';
     }
 
-    let smileWidth = this.width;
-    let smileHeight = this.height;
-    let dmcVideos = dmcInfo.videos;
-    let importVersion = dmcInfo.importVersion;
-
-    // ぜんぜんわからん 時はdmc
-    if (isNaN(smileWidth) || isNaN(smileHeight)) {
-      return 'dmc';
-    }
-
-    // smile側に 1280w 720h を上回る動画がある場合は再エンコードされていない
-    // smile側の再エンコードでは1280x720以下の動画しか生成されないため
-    if (smileWidth > 1280 || smileHeight > 720) {
-      return 'smile';
-    }
-
-    // if (importVersion > 0) {
-    //   return 'smile';
-    // }
-
-    // smileのほうがdmcの下限以下を持っている ≒ 再エンコードされていない
-    if (smileHeight < 360) {
-      return 'smile';
-    }
-
-    const highestDmc = Math.max(...dmcVideos.map(v => {
-      return (/_([0-9]+)p$/.exec(v)[1] || '') * 1;
+    const highestDomand = Math.max(...this.domandInfo.videos.map(v => {
+      return v.height;
     }));
 
-    if (highestDmc >= 720) {
-      return 'dmc';
+    const highestDmc = Math.max(...this.dmcInfo.videos.map(v => {
+      return v.metadata.resolution.height;
+    }));
+
+    // Domandのほうが高解像度を持っているなら恐らくDomand側が高画質
+    if (highestDomand >= highestDmc) {
+      return 'domand';
     }
 
-    // 864x486 648x486 640x384 512x384 旧プレイヤーぴったい合わせの解像度
-    if (smileHeight === 486 || smileHeight === 384) {
-      return 'smile';
-    }
-
-    // DMCのほうが高解像度を持っているなら恐らくDMC側が高画質
-    if (highestDmc >= smileHeight) {
-      return 'dmc';
-    }
-
-    // それ以外はsmile...と行きたいが判断保留は dmc
+    // それ以外はdmc
     return 'dmc';
-  }
-
-  getData() {
-    const data = {};
-    for (const prop of Object.getOwnPropertyNames(this.constructor.prototype)) {
-      if (typeof this[prop] === 'function') { continue; }
-      data[prop] = this[prop];
-    }
-    return data;
   }
 }
 

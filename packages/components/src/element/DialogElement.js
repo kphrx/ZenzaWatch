@@ -237,11 +237,18 @@ const {DialogElement, DialogProps} = (() => {
           text-align: left;
         }
 
-        h3 {
+        h3, h4 {
           margin: 0 auto;
-          width: calc(100% - 16px);
           background: rgba(192, 192, 192, 0.8);
           box-shadow: none;
+        }
+
+        h3 {
+          width: calc(100% - 16px);
+        }
+
+        h4 {
+          width: calc(100% - 32px);
         }
 
         summary {

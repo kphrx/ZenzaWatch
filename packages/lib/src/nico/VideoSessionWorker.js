@@ -10,16 +10,17 @@ const VideoSessionWorker = (() => {
     const SESSION_CLOSE_FAIL_COUNT = 3;
 
     const VIDEO_QUALITY = {
-      auto: /.*/,
-      veryhigh: /_(1080p)$/,
-      high: /_(720p)$/,
-      mid: /_(540p|480p)$/,
-      low: /_(360p)$/
+      auto: "auto",
+      veryhigh: "1080p",
+      high: "720p",
+      mid: "480p",
+      low: "360p",
+      verylow: "低画質",
     };
 
     const util = {
       fetch(url, params = {}) { // ブラウザによっては location.origin は 'blob:' しか入らない
-        if (!location.origin.endsWith('.nicovideo.jp') && !/^blob:https?:\/\/[a-z0-9]+\.nicovideo\.jp\//.test(location.href)) {
+        if (!location.origin.endsWith('.nicovideo.jp') && !new RegExp('^blob:https?://[a-z0-9]+\\.nicovideo\\.jp/').test(location.href)) {
           return self.xFetch(url, params);
         }
         const racers = [];
@@ -61,30 +62,22 @@ const VideoSessionWorker = (() => {
       toString() {
         let dmcInfo = this._dmcInfo;
 
-        let videos = [];
-        let availableVideos =
-            dmcInfo.videos.filter(v => v.isAvailable)
-                .sort((a, b) => b.levelIndex - a.levelIndex);
-        let reg = VIDEO_QUALITY[this._videoQuality] || VIDEO_QUALITY.auto;
-        if (reg === VIDEO_QUALITY.auto) {
-          videos = availableVideos.map(v => v.id);
+        const label = VIDEO_QUALITY[this._videoQuality] || VIDEO_QUALITY.auto;
+        let videos;
+        if (label === VIDEO_QUALITY.auto) {
+          videos = dmcInfo.availableVideoIds;
         } else {
-          availableVideos.forEach(format => {
-            if (reg.test(format.id)) {
-              videos.push(format.id);
-            }
-          });
-          if (videos.length < 1) {
-            videos[0] = availableVideos[0].id;
-          }
+          const { availableVideos } = dmcInfo;
+          const video = availableVideos.find(v => label === v.metadata.label) ?? availableVideos[0];
+          videos = [video.id]
         }
 
-        let audios = [dmcInfo.audios[0]];
+        const audio = dmcInfo.availableAudioIds[0];
 
         let contentSrcIdSets =
-          (this._useHLS && reg === VIDEO_QUALITY.auto) ?
-            this._buildAbrContentSrcIdSets(videos, audios) :
-            this._buildContentSrcIdSets(videos, audios);
+          (this._useHLS && label === VIDEO_QUALITY.auto)
+          ? this._buildAbrContentSrcIdSets(videos, audio)
+          : this._buildContentSrcIdSets(videos, audio);
 
         let http_parameters = {};
         let parameters = {
@@ -149,13 +142,13 @@ const VideoSessionWorker = (() => {
         return JSON.stringify(request, null, 2);
       }
 
-      _buildContentSrcIdSets(videos, audios) {
+      _buildContentSrcIdSets(videos, audio) {
         return [
           {
             content_src_ids: [
               {
                 src_id_to_mux: {
-                  audio_src_ids: audios,
+                  audio_src_ids: [audio],
                   video_src_ids: videos
                 }
               }
@@ -164,13 +157,13 @@ const VideoSessionWorker = (() => {
         ];
       }
 
-      _buildAbrContentSrcIdSets(videos, audios) {
+      _buildAbrContentSrcIdSets(videos, audio) {
         const v = videos.concat();
         const contentSrcIds = [];
         while (v.length > 0) {
           contentSrcIds.push({
             src_id_to_mux: {
-              audio_src_ids: [audios[0]],
+              audio_src_ids: [audio],
               video_src_ids: v.concat()
             }
           });
@@ -183,39 +176,42 @@ const VideoSessionWorker = (() => {
 
     class VideoSession {
 
-      static create(params) {
-        if (params.serverType === 'dmc') {
-          return new DmcSession(params);
-        } else {
-          return new SmileSession(params);
+      static create({serverType, ...params}) {
+        switch (serverType) {
+          case 'domand':
+            return new DomandSession(params);
+          case 'dmc':
+            return new DmcSession(params);
+          default:
+            throw new Error('Unknown server type');
         }
       }
 
-      constructor(params) {
-        this._videoInfo = params.videoInfo;
-        this._dmcInfo = params.dmcInfo;
+      constructor({videoInfo, videoQuality, useHLS}) {
+        this._videoInfo = videoInfo;
 
         this._isPlaying = () => true;
         this._pauseCount = 0;
         this._failCount = 0;
         this._lastResponse = '';
-        this._videoQuality = params.videoQuality || 'auto';
+        this._videoQuality = videoQuality || 'auto';
         this._videoSessionInfo = {};
         this._isDeleted = false;
         this._isAbnormallyClosed = false;
 
         this._heartBeatTimer = null;
 
-        this._useSSL = !!params.useSSL;
+        this._useSSL = true;
+        this._useHLS = !!useHLS;
         this._useWellKnownPort = true;
 
         this._onHeartBeatSuccess = this._onHeartBeatSuccess.bind(this);
         this._onHeartBeatFail = this._onHeartBeatFail.bind(this);
       }
 
-      connect() {
+      async connect() {
         this._createdAt = Date.now();
-        return this._createSession(this._videoInfo, this._dmcInfo);
+        return await this._createSession();
       }
 
       enableHeartBeat() {
@@ -257,18 +253,42 @@ const VideoSessionWorker = (() => {
         }
       }
 
-      close() {
+      async close() {
         this._isClosed = true;
         this.disableHeartBeat();
-        return this._deleteSession();
+        return await this._deleteSession();
+      }
+
+      get serverType() {
+        return 'unknown';
+      }
+
+      get info() {
+        return {...this._videoSessionInfo, type: this.serverType};
+      }
+
+      set info({ url, sessionId, video, audioFormat, heartBeatUrl, deleteSessionUrl, lastResponse }) {
+        this._videoSessionInfo = {
+          url,
+          sessionId,
+          video,
+          audioFormat,
+          heartBeatUrl,
+          deleteSessionUrl,
+          lastResponse
+        };
+      }
+
+      get isDomand() {
+        return this.serverType === 'domand';
+      }
+
+      get isDmc() {
+        return this.serverType === 'dmc';
       }
 
       get isDeleted() {
         return !!this._isDeleted;
-      }
-
-      get isDmc() {
-        return this._serverType === 'dmc';
       }
 
       get isAbnormallyClosed() {
@@ -276,20 +296,115 @@ const VideoSessionWorker = (() => {
       }
     }
 
+    class DomandSession extends VideoSession {
+      constructor(params) {
+        super(params);
+        this._expireTime = new Date();
+        this._domandInfo = this._videoInfo.domandInfo;
+      }
+
+      async _createSession() {
+        console.time('create Domand session');
+        if (!this._useHLS) {
+          throw new Error('HLSに未対応');
+        }
+        const { availableVideos } = this._domandInfo;
+        const audioFormat = this._domandInfo.availableAudioIds[0];
+        let videos, videoFormat, videoLabel;
+        if (this._videoQuality === 'auto') {
+          videos = this._domandInfo.availableVideoIds;
+          const { id, label } = availableVideos[0];
+          videoFormat = id;
+          videoLabel = label;
+        } else {
+          const video = availableVideos.find(v => v.label === this._videoQuality) ?? availableVideos[0];
+          videoFormat = video.id;
+          videoLabel = video.label;
+          videos = [videoFormat];
+        }
+
+        const query = new URLSearchParams({ actionTrackId: this._videoInfo.actionTrackId });
+        const url = `https://nvapi.nicovideo.jp/v1/watch/${this._domandInfo.videoId}/access-rights/hls?${query.toString()}`;
+        const result = await util.fetch(url, {
+          method: 'post',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Frontend-Id': 6,
+            'X-Frontend-Version': '0',
+            'X-Request-With': 'https://www.nicovideo.jp',
+            'X-Access-Right-Key': this._domandInfo.accessRightKey,
+          },
+          credentials: 'include',
+          body: JSON.stringify(this._buildOutputsMatrix(videos, audioFormat))
+        }).then(res => res.json());
+        if (result.meta.status == null || result.meta.status >= 300) {
+          throw new Error('cannot create domand session', result)
+        }
+
+        this._lastResponse = result.data || {};
+        const {
+          contentUrl,
+          // createTime,
+          expireTime
+        } = this._lastResponse;
+        this._lastUpdate = Date.now();
+        this._expireTime = new Date(expireTime);
+
+        this.info = {
+          url: contentUrl,
+          video: {
+            format: videoFormat,
+            label: videoLabel,
+          },
+          audioFormat,
+          lastResponse: result
+        };
+        console.timeEnd('create Domand session');
+        return this.info;
+      }
+
+      async _deleteSession() {
+        if (this._isDeleted) {
+          return;
+        }
+        this._isDeleted = true;
+      }
+
+      get isDeleted() {
+        if (this._isDeleted) {
+          return true;
+        }
+        if (Date.now() > this._expireTime) {
+          this._isDeleted = true;
+        }
+        return this._isDeleted;
+      }
+
+      get serverType() {
+        return 'domand';
+      }
+
+      _buildOutputsMatrix(videoIds, audio) {
+        return {
+          outputs: videoIds.map(v => [v, audio]),
+        }
+      }
+    }
+
     class DmcSession extends VideoSession {
       constructor(params) {
         super(params);
 
-        this._serverType = 'dmc';
         this._heartBeatInterval = DMC_HEART_BEAT_INTERVAL_MS;
         this._onHeartBeatSuccess = this._onHeartBeatSuccess.bind(this);
         this._onHeartBeatFail = this._onHeartBeatFail.bind(this);
-        this._useHLS = typeof params.useHLS === 'boolean' ? params.useHLS : true;
         this._lastUpdate = Date.now();
         this._heartbeatLifetime = this._heartBeatInterval;
+        this._dmcInfo = this._videoInfo.dmcInfo;
       }
 
-      _createSession(videoInfo, dmcInfo) {
+      _createSession() {
+        const dmcInfo = this._dmcInfo;
         console.time('create DMC session');
         const baseUrl = (dmcInfo.urls.find(url => url.is_well_known_port === this._useWellKnownPort) || dmcInfo.urls[0]).url;
         return new Promise((resolve, reject) => {
@@ -310,12 +425,12 @@ const VideoSessionWorker = (() => {
           }).then(res => res.json())
             .then(json => {
               const data = json.data || {}, session = data.session || {};
-              let sessionId = session.id;
-              let content_src_id_sets = session.content_src_id_sets;
-              let videoFormat =
-                content_src_id_sets[0].content_src_ids[0].src_id_to_mux.video_src_ids[0];
-              let audioFormat =
-                content_src_id_sets[0].content_src_ids[0].src_id_to_mux.audio_src_ids[0];
+              const sessionId = session.id;
+              const content_src_id_sets = session.content_src_id_sets;
+              const {
+                video_src_ids: [videoFormat],
+                audio_src_ids: [audioFormat],
+              } = content_src_id_sets[0].content_src_ids[0].src_id_to_mux;
 
               this._heartBeatUrl =
                 `${baseUrl}/${sessionId}?_format=json&_method=PUT`;
@@ -325,11 +440,13 @@ const VideoSessionWorker = (() => {
               this._lastResponse = data;
 
               this._lastUpdate = Date.now();
-              this._videoSessionInfo = {
-                type: 'dmc',
+              this.info = {
                 url: session.content_uri,
                 sessionId,
-                videoFormat,
+                video: {
+                  format: videoFormat,
+                  label: dmcInfo.availableVideos.find(v => videoFormat === v.id).metadata.label,
+                },
                 audioFormat,
                 heartBeatUrl: this._heartBeatUrl,
                 deleteSessionUrl: this._deleteSessionUrl,
@@ -337,11 +454,11 @@ const VideoSessionWorker = (() => {
               };
               this.enableHeartBeat();
               console.timeEnd('create DMC session');
-              resolve(this._videoSessionInfo);
+              resolve(this.info);
             }).catch(err => {
-            console.error('create api fail', err);
-            reject(err.message || err);
-          });
+              console.error('create api fail', err);
+              reject(err.message || err);
+            });
         });
       }
 
@@ -351,7 +468,7 @@ const VideoSessionWorker = (() => {
       }
 
       _heartBeat() {
-        let url = this._videoSessionInfo.heartBeatUrl;
+        let url = this.info.heartBeatUrl;
         util.fetch(url, {
           method: 'post',
           dataType: 'text',
@@ -367,7 +484,7 @@ const VideoSessionWorker = (() => {
           return Promise.resolve();
         }
         this._isDeleted = true;
-        let url = this._videoSessionInfo.deleteSessionUrl;
+        let url = this.info.deleteSessionUrl;
         return new Promise(res => setTimeout(res, 3000)).then(() => {
           return util.fetch(url, {
             method: 'post',
@@ -387,171 +504,325 @@ const VideoSessionWorker = (() => {
       get isDeleted() {
         return !!this._isDeleted || (Date.now() - this._lastUpdate) > this._heartbeatLifetime * 1.2;
       }
+
+      get serverType() {
+        return 'dmc';
+      }
     }
 
-    class SmileSession extends VideoSession {
+
+    class StoryboardInfoLoader {
+      static create({type, ...params}) {
+        switch (type) {
+          case 'domand':
+            return new DomandStoryboardInfoLoader(params);
+          case 'dmc':
+            return new DmcStoryboardInfoLoader(params);
+          default:
+            throw new Error('Unknown server type');
+        }
+      }
+
+      constructor({url}) {
+        this._url = url;
+        this._duration = 1;
+      }
+
+      async load() {
+        throw new Error('not implemented');
+      }
+
+      get storyboard() {
+        return {
+          version: "1",
+          thumbnail: {
+            width: 160,
+            height: 90,
+          },
+          columns: 1,
+          rows: 1,
+          interval: 1000,
+          quality: 1,
+          images: [{
+            timestamp: 0,
+            url: 'https://example.com'
+          }],
+        };
+      }
+
+      get duration() {
+        return this._duration;
+      }
+
+      set duration(value) {
+        this._duration = value;
+      }
+
+      async getStoryboardWithImages() {
+        const fetchImages = this.storyboard.images.map(async image => {
+          try {
+            const res = await fetch(image.url);
+            return {
+              ...image,
+              buffer: await res.arrayBuffer(),
+            }
+          } catch {
+            return image;
+          }
+        });
+        const count = Math.ceil(this.duration * 1000 / this.storyboard.interval);
+        return {
+          ...this.storyboard,
+          count,
+          images: await Promise.all(fetchImages),
+        }
+      }
+
+      async _getInfo() {
+        return {
+          duration: this.duration,
+          storyboard: await this.getStoryboardWithImages(),
+        };
+      }
+
+      async getInfo() {
+        return {
+          ...await this._getInfo(),
+          format: 'unknown',
+        };
+      }
+
+      _toJSON() {
+        return {
+          duration: this.duration,
+          storyboard: this.storyboard,
+        };
+      }
+
+      toJSON() {
+        return {
+          ...this._toJSON(),
+          format: 'unknown',
+        };
+      }
+    }
+
+    class DomandStoryboardInfoLoader extends StoryboardInfoLoader {
       constructor(params) {
         super(params);
-        this._serverType = 'smile';
-        this._heartBeatInterval = SMILE_HEART_BEAT_INTERVAL_MS;
-        this._onHeartBeatSuccess = this._onHeartBeatSuccess.bind(this);
-        this._onHeartBeatFail = this._onHeartBeatFail.bind(this);
-        this._lastUpdate = Date.now();
+        this._rawData = null;
       }
 
-      _createSession(videoInfo) {
-        this.enableHeartBeat();
-        return Promise.resolve(videoInfo.videoUrl);
-      }
-
-      _heartBeat() {
-         let url = this._videoInfo.watchUrl;
-         let query = [
-           'mode=pc_html5',
-           'playlist_token=' + this._videoInfo.playlistToken,
-           'continue_watching=1',
-           'watch_harmful=2'
-         ];
-         if (this._videoInfo.isEconomy) {
-           query.push(this._videoInfo.isEconomy ? 'eco=1' : 'eco=0');
-         }
-
-         if (query.length > 0) {
-           url += '?' + query.join('&');
-         }
-
-         util.fetch(url, {
-           timeout: 10000,
-           credentials: 'include'
-         }).then(res => res.json())
-           .then(this._onHeartBeatSuccess)
-           .catch(this._onHeartBeatFail);
-      }
-
-      _deleteSession() {
-        if (this._isDeleted) {
-          return Promise.resolve();
+      async load() {
+        try {
+          const result = await util.fetch(this._url, {credentials: 'include'});
+          this._rawData = await result.json();
+        } catch {
+          throw 'storyboard request fail';
         }
-        this._isDeleted = true;
-        return Promise.resolve();
       }
 
-      _onHeartBeatSuccess(result) {
-        this._lastResponse = result;
-        if (result.status !== 'ok') {
-          return this._onHeartBeatFail();
+      get storyboard() {
+        if (this._rawData == null) {
+          return null;
         }
-
-        this._lastUpdate = Date.now();
-        if (result && result.flashvars && result.flashvars.watchAuthKey) {
-          this._videoInfo.watchAuthKey = result.flashvars.watchAuthKey;
+        const {
+          thumbnailWidth: width,
+          thumbnailHeight: height,
+          images,
+          ...sbInfo
+        } = this._rawData;
+        return {
+          ...sbInfo,
+          thumbnail: {
+            width,
+            height,
+          },
+          images: images.map(image => {
+            const url = new URL(this._url);
+            const name = image.url;
+            url.pathname = url.pathname.replace(/storyboard\.json$/, name);
+            image.url = url.toString();
+            return image;
+          }),
         }
-
       }
 
-      // smileには明確なセッション終了の概念がないため、
-      // cookieの有効期限が切れていそうな時間が経っているかどうかで判断する
-      get isDeleted() {
-        return this._isDeleted || (Date.now() - this._lastUpdate > 10 * 60 * 1000);
+      async getInfo() {
+        return {
+          ...await this._getInfo(),
+          format: 'domand',
+        };
+      }
+
+      toJSON() {
+        return {
+          ...this._toJSON(),
+          format: 'domand',
+        };
       }
     }
 
+    class DmcStoryboardInfoLoader extends StoryboardInfoLoader {
+      constructor(params) {
+        super(params);
+        this._rawData = null;
+      }
 
-    const DmcStoryboardInfoLoader = (() => {
-      const parseStoryboard = sb => {
-        const result = {
-          id: 0,
-          urls: [],
-          quality: sb.quality,
-          thumbnail: {
-            width: sb.thumbnail_width,
-            height: sb.thumbnail_height,
-            number: null,
-            interval: sb.interval
-          },
-          board: {
-            rows: sb.rows,
-            cols: sb.columns,
-            number: sb.images.length
-          }
-        };
-        sb.images.forEach(image => result.urls.push(image.uri));
+      async load() {
+        const result = await util.fetch(this._url, {credentials: 'include'}).then(res => res.json());
+        if (result.meta.status && result.meta.status >= 300) {
+          throw 'storyboard request fail';
+        }
+        this._rawData = result.data;
+        return;
+      }
 
-        return result;
-      };
-
-
-      const parseMeta = meta => {
-        const result = {
-          format: 'dmc',
-          status: meta.meta.message,
-          url: null,
-          movieId: null,
-          storyboard: []
-        };
-
-        meta.data.storyboards.forEach(sb => {
-          result.storyboard.unshift(parseStoryboard(sb));
-        });
-
-        // 画質の良い順にソート
-        result.storyboard.sort((a, b) => {
-          if (a.quality < b.quality) {
-            return 1;
-          }
-          if (a.quality > b.quality) {
-            return -1;
-          }
-          return 0;
-        });
-
-        return result;
-      };
-
-
-      const load = url => {
-        return util.fetch(url, {credentials: 'include'}).then(res => res.json())
-          .then(info => {
-            if (!info.meta || !info.meta.message || info.meta.message !== 'ok') {
-              return Promise.reject('storyboard request fail');
+      get _storyboards() {
+        const {storyboards = [], version = 0} = this._rawData ?? {};
+        const ver = version.toString();
+        return storyboards.map(sb => {
+          const images = sb.images.map(img => {
+            return {
+              timestamp: img.timestamp,
+              url: img.uri,
             }
-            return parseMeta(info);
-          });
-      };
+          })
+          return {
+            version: ver,
+            thumbnail: {
+              width: sb.thumbnail_width,
+              height: sb.thumbnail_height,
+            },
+            columns: sb.columns,
+            rows: sb.rows,
+            interval: sb.interval,
+            quality: sb.quality,
+            images,
+          }
+        }).toSorted((a, b) => b.quality < a.quality);
+      }
 
-      return {
-        load,
-        _parseMeta: parseMeta,
-        _parseStoryboard: parseStoryboard
-      };
-    })();
+      get storyboard() {
+        if (this._storyboards.length > 0) {
+          return this._storyboards[0];
+        }
+
+        return null;
+      }
+
+      async getInfo() {
+        return {
+          ...await this._getInfo(),
+          format: 'dmc',
+        };
+      }
+
+      toJSON() {
+        return {
+          ...this._toJSON(),
+          format: 'dmc',
+        };
+      }
+    }
 
     class StoryboardSession {
-      constructor(info) {
-        this._info = info;
-        this._url = info.urls[0].url;
-      }
-
-      create() {
-        const url = `${this._url}?_format=json`;
-        const body = this._createRequestString(this._info);
-        return util.fetch(url, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body
-        }).then(res => res.json()).catch(err => {
-          console.error('create dmc session fail', err);
-          return Promise.reject('create dmc session fail');
-        });
-      }
-
-      _createRequestString(info) {
-        if (!info) {
-          info = this._info;
+      static create({serverType, ...params}) {
+        switch (serverType) {
+          case 'domand':
+            return new DomandStoryboardSession(params);
+          case 'dmc':
+            return new DmcStoryboardSession(params);
+          default:
+            throw new Error('Unknown server type');
         }
+      }
+
+      constructor({videoInfo}) {
+        this._videoInfo = videoInfo;
+      }
+
+      async create() {
+        return await this._createSession();
+      }
+    }
+
+    class DomandStoryboardSession extends StoryboardSession {
+      constructor(params) {
+        super(params);
+        this._info = this._videoInfo.domandInfo;
+      }
+
+      async _createSession() {
+        const query = new URLSearchParams({ actionTrackId: this._videoInfo.actionTrackId });
+        const url = `https://nvapi.nicovideo.jp/v1/watch/${this._info.videoId}/access-rights/storyboard?${query.toString()}`;
+        try {
+          const result = await util.fetch(url, {
+            method: 'post',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Frontend-Id': 6,
+              'X-Frontend-Version': '0',
+              'X-Request-With': 'https://www.nicovideo.jp',
+              'X-Access-Right-Key': this._info.accessRightKey,
+            },
+            credentials: 'include',
+          }).then(res => res.json());
+          if (result.meta.status && result.meta.status >= 300) {
+            throw 'api_not_exist';
+          }
+          return this._toSessionInfo(result.data);
+        } catch (err) {
+          if (err === 'api_not_exist') {
+            throw 'Domand storyboard api not exist';
+          }
+          console.error('create domand session fail', err);
+          throw 'create domand session fail';
+        }
+      }
+
+      _toSessionInfo({contentUrl: url}) {
+        return {
+          type: 'domand',
+          url,
+        };
+      }
+    }
+
+    class DmcStoryboardSession extends StoryboardSession {
+      constructor(params) {
+        super(params);
+        this._info = this._videoInfo.dmcStoryboardInfo;
+        this._url = this._info.urls[0].url;
+      }
+
+      async _createSession() {
+        const url = `${this._url}?_format=json`;
+        const body = this._createRequestString();
+        try {
+          const result = await util.fetch(url, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body
+          }).then(res => res.json());
+          if (result.meta.status && result.meta.status >= 300 || !result.data?.session?.content_uri) {
+            throw 'api_not_exist';
+          }
+          return this._toSessionInfo(result.data);
+        } catch (err) {
+          if (err === 'api_not_exist') {
+            throw 'DMC storyboard api not exist';
+          }
+          console.error('create dmc session fail', err);
+          throw 'create dmc session fail';
+        }
+      }
+
+      _createRequestString() {
+        const info = this._info;
 
         // 階層が深くて目が疲れた
         const request = {
@@ -583,8 +854,8 @@ const VideoSessionWorker = (() => {
                 http_parameters: {
                   parameters: {
                     storyboard_download_parameters: {
-                      use_well_known_port: info.urls[0].isWellKnownPort ? 'yes' : 'no',
-                      use_ssl: info.urls[0].isSsl ? 'yes' : 'no'
+                      use_well_known_port: 'yes',
+                      use_ssl: 'yes'
                     }
                   }
                 }
@@ -601,34 +872,36 @@ const VideoSessionWorker = (() => {
           }
         };
 
-        (info.videos || []).forEach(video => {
-          request.session.content_src_id_sets[0].content_src_ids.push(video);
-        });
-
         //console.log('storyboard session request', JSON.stringify(request, null, ' '));
         return JSON.stringify(request);
       }
+
+      _toSessionInfo({session: {content_uri: url}}) {
+        return {
+          type: 'dmc',
+          url,
+        };
+      }
     }
-
-
 
 
     const SESSION_ID = Symbol('SESSION_ID');
     const getSessionId = function() { return `session_${this.id++}`; }.bind({id: 0});
 
     let current = null;
-    const create = async ({videoInfo, dmcInfo, videoQuality, serverType, useHLS}) => {
+    const create = async (params) => {
       if (current) {
         current.close();
         current = null;
       }
-      current = await VideoSession.create({
-        videoInfo, dmcInfo, videoQuality, serverType, useHLS});
+      current = await VideoSession.create(params);
       const sessionId = getSessionId();
       current[SESSION_ID] = sessionId;
 
       // console.log('create', sessionId, current[SESSION_ID]);
       return {
+        serverType: current.serverType,
+        isDomand: current.isDomand,
         isDmc: current.isDmc,
         sessionId
       };
@@ -645,6 +918,8 @@ const VideoSessionWorker = (() => {
       }
       // console.log('getState', sessionId, current[SESSION_ID]);
       return {
+        serverType: current.serverType,
+        isDomand: current.isDomand,
         isDmc: current.isDmc,
         isDeleted: current.isDeleted,
         isAbnormallyClosed: current.isAbnormallyClosed,
@@ -658,22 +933,24 @@ const VideoSessionWorker = (() => {
       current = null;
     };
 
-    const storyboard = async ({info, duration}) => {
-      const result = await new StoryboardSession(info).create();
-      if (!result || !result.data || !result.data.session || !result.data.session.content_uri) {
-        return Promise.reject('DMC storyboard api not exist');
+    const storyboard = async ({videoInfo, serverType}) => {
+      const sbSessionInfo = await StoryboardSession.create({videoInfo, serverType}).create();
+      const loader = StoryboardInfoLoader.create(sbSessionInfo);
+      loader.duration = videoInfo.duration;
+      await loader.load();
+      try {
+        const sbInfo = await loader.getInfo();
+        return {
+          ...sbInfo,
+          status: 'ok',
+          watchId: videoInfo.watchId,
+        };
+      } catch {
+        return {
+          watchId: videoInfo.watchId,
+          status: 'fail',
+        }
       }
-      const uri = result.data.session.content_uri;
-      const sbInfo = await DmcStoryboardInfoLoader.load(uri);
-      for (let board of sbInfo.storyboard) {
-        board.thumbnail.number = Math.floor(duration * 1000 / board.thumbnail.interval);
-        board.urls = await Promise.all(
-          board.urls.map(url => fetch(url).then(r => r.arrayBuffer()).catch(() => url)
-        ));
-        break; // 二番目以降は低画質
-      }
-      sbInfo.duration = duration;
-      return sbInfo;
     };
 
     self.onmessage = async ({command, params}) => {
@@ -700,8 +977,7 @@ const VideoSessionWorker = (() => {
   const create = async ({videoInfo, videoQuality, serverType, useHLS}) => {
     await initWorker();
     const params = {
-      videoInfo: videoInfo.getData(),
-      dmcInfo: videoInfo.dmcInfo ? videoInfo.dmcInfo.getData() : null,
+      videoInfo: videoInfo.toJSON(),
       videoQuality,
       serverType,
       useHLS
@@ -715,17 +991,18 @@ const VideoSessionWorker = (() => {
     });
   };
 
-  const storyboard = async (watchId, sbSessionInfo, duration) => {
-    const cache = await StoryboardCacheDb.get(watchId);
+  const storyboard = async ({type, info}) => {
+    const videoInfo = info.toJSON();
+    const cacheId = `${videoInfo.watchId}_${type}`;
+    const cache = await StoryboardCacheDb.get(cacheId);
     if (cache) {
       return cache;
     }
-    worker = worker || workerUtil.createCrossMessageWorker(func);
-    const params = {info: sbSessionInfo, duration};
-    const sbInfo = await worker.post({command: 'storyboard', params});
-    sbInfo.watchId = watchId;
-    StoryboardCacheDb.put(watchId, sbInfo);
-    return sbInfo;
+    await initWorker();
+    const params = {videoInfo, serverType: type};
+    const result = await worker.post({command: 'storyboard', params});
+    StoryboardCacheDb.put(cacheId, result);
+    return result;
   };
 
   return {initWorker, create, storyboard};

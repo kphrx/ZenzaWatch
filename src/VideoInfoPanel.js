@@ -112,7 +112,7 @@ class VideoInfoPanel extends Emitter {
       watchId: videoInfo.watchId,
       videoId: videoInfo.videoId,
       token: videoInfo.csrfToken,
-      watchAuthKey: videoInfo.watchAuthKey
+      tagEdit: videoInfo.tagEdit,
     });
 
     this._seriesList.textContent = '';
@@ -1189,7 +1189,7 @@ class VideoHeaderPanel extends Emitter {
       watchId,
       videoId: videoInfo.videoId,
       token: videoInfo.csrfToken,
-      watchAuthKey: videoInfo.watchAuthKey
+      tagEdit: videoInfo.tagEdit,
     });
 
     this._relatedInfoMenu.update(videoInfo);

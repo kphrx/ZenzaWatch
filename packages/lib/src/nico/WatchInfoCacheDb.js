@@ -41,7 +41,7 @@ const WatchInfoCacheDb = (() => {
       async put(watchId, options = {}) {
         /** @type {VideoInfoModel|null} */
         const videoInfo = options.videoInfo || null;
-        const videoInfoRawData = (videoInfo && videoInfo.getData) ? videoInfo.getData() : videoInfo;
+        const videoInfoRawData = (videoInfo && videoInfo.toJSON) ? videoInfo.toJSON() : videoInfo;
         const cache = await this.get(watchId) || {};
         const now = Date.now();
         /** @type {string} */

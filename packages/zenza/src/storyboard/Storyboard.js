@@ -47,17 +47,14 @@ class Storyboard extends Emitter {
     this.emit('reset', this.model);
   }
   onVideoCanPlay(watchId, videoInfo) {
-    if (!nicoUtil.isPremium()) {
-      return;
-    }
-    if (!this.config.props.enableStoryboard) {
+    if (!this.config.props.enableStoryboard || !videoInfo.hasStoryboard || !nicoUtil.isPremium()) {
       return;
     }
 
     this._watchId = watchId;
     const resuestId = this._requestId =  Math.random();
 
-    StoryboardInfoLoader.load(videoInfo)
+    StoryboardInfoLoader.load(this.config.props.videoServerType, videoInfo)
       .then(async (info) => {
         await this.promise('dom-ready');
         return info;

@@ -2285,7 +2285,7 @@ Object.assign(util, textUtil);
           const lang = util.getPageLanguage();
           const prefix = owner.type === 'user' ? '投稿者: ' : '提供: ';
           const suffix =
-            (owner.type === 'user' && lang === 'ja-JP') ? ' さん' : '';
+            (owner.type === 'user' && lang.startsWith('ja')) ? ' さん' : '';
           owner.linkId =
             owner.id ?
               (owner.type === 'user' ? `user/${owner.id}` : `ch${owner.id}`) :

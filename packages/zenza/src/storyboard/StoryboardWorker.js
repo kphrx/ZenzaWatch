@@ -1,4 +1,5 @@
 import {workerUtil} from '../../../lib/src/infra/workerUtil';
+import {StoryboardInfoModel} from './StoryboardInfoModel';
 //===BEGIN===
 
 const StoryboardWorker = (() => {
@@ -94,134 +95,6 @@ const StoryboardWorker = (() => {
       }
     };
 
-    class StoryboardInfoModel {
-      static get blankData() {
-        return {
-          format: 'dmc',
-          status: 'fail',
-          duration: 1,
-          storyboard: [{
-            id: 1,
-            urls: ['https://example.com'],
-            thumbnail: {
-              width: 160,
-              height: 90,
-              number: 1,
-              interval: 1000
-            },
-            board: {
-              rows: 1,
-              cols: 1,
-              number: 1
-            }
-          }]
-        };
-      }
-
-      constructor(rawData) {
-        this.update(rawData);
-      }
-
-      update(rawData) {
-        if (!rawData || rawData.status !== 'ok') {
-          this._rawData = this.constructor.blankData;
-        } else {
-          this._rawData = rawData;
-        }
-        this.primary = this._rawData.storyboard[0];
-        return this;
-      }
-      get rawData() {
-        return this._rawData || this.constructor.blankData;
-      }
-
-      get isAvailable() {return this._rawData.status === 'ok';}
-
-      get hasSubStoryboard() { return false; }
-
-      get status() {return this._rawData.status;}
-      get message() {return this._rawData.message;}
-      get duration() {return this._rawData.duration * 1;}
-      get isDmc() {return this._rawData.format === 'dmc';}
-      get url() {
-        return this.isDmc ? this.primary.urls[0] : this.primary.url;
-      }
-      get imageUrls() {
-        return [...Array(this.pageCount)].map((a, i) => this.getPageUrl(i));
-      }
-      get cellWidth() { return this.primary.thumbnail.width * 1; }
-      get cellHeight() { return this.primary.thumbnail.height * 1; }
-      get cellIntervalMs() { return this.primary.thumbnail.interval * 1; }
-      get cellCount() {
-        return Math.max(
-          Math.ceil(this.duration / Math.max(0.01, this.cellIntervalMs)),
-          this.primary.thumbnail.number * 1
-        );
-      }
-      get rows() { return this.primary.board.rows * 1; }
-      get cols() { return this.primary.board.cols * 1; }
-      get pageCount() { return this.primary.board.number * 1; }
-      get totalRows() { return Math.ceil(this.cellCount / this.cols); }
-      get pageWidth() { return this.cellWidth * this.cols; }
-      get pageHeight() { return this.cellHeight * this.rows; }
-      get countPerPage() { return this.rows * this.cols; }
-
-      /**
-       *  nページ目のURLを返す。 ゼロオリジン
-       */
-      getPageUrl(page) {
-        if (!this.isDmc) {
-          page = Math.max(0, Math.min(this.pageCount - 1, page));
-          return `${this.url}&board=${page + 1}`;
-        } else {
-          return this.primary.urls[page];
-        }
-      }
-
-      /**
-       * msに相当するサムネは何番目か？を返す
-       */
-      getIndex(ms) {
-        // msec -> sec
-        let v = Math.floor(ms / 1000);
-        v = Math.max(0, Math.min(this.duration, v));
-
-        // サムネの総数 ÷ 秒数
-        // Math.maxはゼロ除算対策
-        const n = this.cellCount / Math.max(1, this.duration);
-
-        return parseInt(Math.floor(v * n), 10);
-      }
-
-      /**
-       * Indexのサムネイルは何番目のページにあるか？を返す
-       */
-      getPageIndex(thumbnailIndex) {
-        const perPage = this.countPerPage;
-        const pageIndex = parseInt(thumbnailIndex / perPage, 10);
-        return Math.max(0, Math.min(this.pageCount, pageIndex));
-      }
-
-      /**
-       *  msに相当するサムネは何ページの何番目にあるか？を返す
-       */
-      getThumbnailPosition(ms) {
-        const index = this.getIndex(ms);
-        const page = this.getPageIndex(index);
-
-        const mod = index % this.countPerPage;
-        const row = Math.floor(mod / Math.max(1, this.cols));
-        const col = mod % this.rows;
-        return {
-          page,
-          url: this.getPageUrl(page),
-          index,
-          row,
-          col
-        };
-      }
-    }
-
     class BoardView {
       constructor({canvas, info, name}) {
         this.canvas = canvas;
@@ -271,7 +144,7 @@ const StoryboardWorker = (() => {
         // info.cellCount * info.cellWidth;
 
         this.boards.forEach(board => board.image && board.image.close && board.image.close());
-        this.boards = (await Promise.all(this._info.imageUrls.map(async (url, idx) => {
+        this.boards = (await Promise.all(info.images.map(async (url, idx) => {
           const image = await this.images.get(url);
           const boards = [];
           for (let row = 0; row < rows; row++) {
@@ -486,7 +359,7 @@ const StoryboardWorker = (() => {
 
       set info(info) {
         this.isReady = false;
-        this.info && this.info.imageUrls.forEach(url => this.images.release(url));
+        this.info && this.info.images.forEach(url => this.images.release(url));
 
         this._info.update(info);
         this._currentTime = -1;
@@ -543,7 +416,7 @@ const StoryboardWorker = (() => {
       }
 
       dispose() {
-        this.info && this.info.imageUrls.forEach(url => this.images.release(url));
+        this.info && this.info.images.forEach(url => this.images.release(url));
         this.info = null;
       }
       sharedMemory() {}
@@ -689,7 +562,7 @@ const StoryboardWorker = (() => {
         func(worker);
       }
     } else {
-      worker = worker || workerUtil.createCrossMessageWorker(func, {name: NAME});
+      worker = worker || workerUtil.createCrossMessageWorker(func, {name: NAME, inject: StoryboardInfoModel.toString()});
     }
     return worker;
   };

@@ -176,6 +176,15 @@ class NicoCommentCss3PlayerView extends Emitter {
           }
         , 100)
       );
+      this._config.onkey('aiCommentOpacity',
+        _.debounce(
+          v => {
+            console.nicoru('update aiCommentOpacity', v, this._config.aiCommentOpacity, commentLayerOuter);
+            cssUtil.setProps(
+            [commentLayerOuter, '--ai-comment-opacity', cssUtil.number(v * 1)]);
+          }
+        , 100)
+      );
       self.console.timeEnd('initialize NicoCommentCss3PlayerView');
     };
 
@@ -413,8 +422,9 @@ class NicoCommentCss3PlayerView extends Emitter {
     const commentLayer = this.commentLayer;
     const elements = this.removingElements;
     const af = this.window.Array.from; // prototype.js汚染を警戒
-    let inViewElements =  // 表示上限オーバー時、かんたんコメントが優先的に消えるように
-      af(commentLayer.querySelectorAll('.nicoChat.fork2'))
+    let inViewElements =  // 表示上限オーバー時、AIキャラクターコメントとかんたんコメントが優先的に消えるように
+      af(commentLayer.querySelectorAll('.nicoChat.fork3'))
+        .concat(af(commentLayer.querySelectorAll('.nicoChat.fork2')))
         .concat(af(commentLayer.querySelectorAll('.nicoChat.fork0')));
     for (let i = inViewElements.length - max - 1; i >= 0; i--) {
       elements.push(inViewElements[i]);
@@ -585,6 +595,7 @@ NicoCommentCss3PlayerView.__TPL__ = ((Config) => {
   let ownerShadowColor = Config.props['commentLayer.ownerCommentShadowColor'];
   ownerShadowColor = ownerShadowColor.replace(/([^a-z^0-9^#])/ig, '');
   let easyCommentOpacity = Config.props['commentLayer.easyCommentOpacity'];
+  let aiCommentOpacity = Config.props['commentLayer.aiCommentOpacity'];
   let textShadowColor = '#000';
   // let textShadowColor2 = '#fff';
   let textShadowGray = '#888';
@@ -942,6 +953,10 @@ body.in-capture .commentLayer {
 
 .nicoChat.fork2 {
   opacity: var(--easy-comment-opacity, ${easyCommentOpacity}) !important;
+}
+
+.nicoChat.fork3 {
+  opacity: var(--ai-comment-opacity, ${aiCommentOpacity}) !important;
 }
 
 .nicoChat.blink {

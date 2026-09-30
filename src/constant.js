@@ -125,7 +125,7 @@ CONSTANT.COMMON_CSS = `
     padding: 0;
   }
 
-  .zenzaPopupMenu ul li {
+  .zenzaPopupMenu ul > li {
     position: relative;
     margin: 2px 4px;
     white-space: nowrap;
@@ -134,29 +134,29 @@ CONSTANT.COMMON_CSS = `
     list-style-type: none;
     float: inherit;
   }
-  .zenzaPopupMenu ul li + li {
+  .zenzaPopupMenu ul > li + li {
     border-top: 1px dotted var(--item-border-color);
   }
 
-  .zenzaPopupMenu li.selected {
+  .zenzaPopupMenu ul > li.selected {
     font-weight: bolder;
   }
 
-  .zenzaPopupMenu ul li:hover {
+  .zenzaPopupMenu ul > li:hover {
     background: #663;
   }
-  .zenzaPopupMenu ul li.separator {
+  .zenzaPopupMenu ul > li.separator {
     border: 1px outset;
     height: 2px;
     width: 90%;
   }
-  .zenzaPopupMenu li span {
+  .zenzaPopupMenu li > span {
     box-sizing: border-box;
     margin-left: 8px;
     display: inline-block;
     cursor: pointer;
   }
-  .zenzaPopupMenu ul li.selected span:before {
+  .zenzaPopupMenu ul > li.selected > span:before {
     content: '✔';
     left: 0;
     position: absolute;

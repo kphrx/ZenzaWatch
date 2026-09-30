@@ -161,40 +161,6 @@ const nicoUtil = {
     window.open(url, '_blank', 'width=550, height=480, left=100, top50, personalbar=0, toolbar=0, scrollbars=1, sizable=1', 0);
   },
   isGinzaWatchUrl: url => /^https?:\/\/www\.nicovideo\.jp\/watch\//.test(url || location.href),
-  getPlayerVer: () => {
-    if (document.getElementById('js-initial-watch-data')) {
-      return 'html5';
-    }
-    if (document.getElementById('watchAPIDataContainer')) {
-      return 'flash';
-    }
-    return 'unknown';
-  },
-  isZenzaPlayableVideo: () => {
-    try {
-      // HTML5版プレイヤーなら再生できるはず
-      if (nicoUtil.getPlayerVer() === 'html5') {
-        return true;
-      }
-      const watchApiData = JSON.parse(document.querySelector('#watchAPIDataContainer').textContent);
-      const flvInfo = textUtil.parseQuery(
-        decodeURIComponent(watchApiData.flashvars.flvInfo)
-      );
-      const dmcInfo = JSON.parse(
-        decodeURIComponent(watchApiData.flashvars.dmcInfo || '{}')
-      );
-      const videoUrl = flvInfo.url ? flvInfo.url : '';
-      const isDmc = dmcInfo && dmcInfo.time;
-      if (isDmc) {
-        return true;
-      }
-      const isSwf = /\/smile\?s=/.test(videoUrl);
-      const isRtmp = (videoUrl.indexOf('rtmp') === 0);
-      return (isSwf || isRtmp) ? false : true;
-    } catch (e) {
-      return false;
-    }
-  },
   getNicoHistory: window.decodeURIComponent(document.cookie.replace(/^.*(nicohistory[^;+]).*?/, '')),
   getMypageVer: () => document.querySelector('#js-initial-userpage-data') ? 'spa' : 'legacy'
 };

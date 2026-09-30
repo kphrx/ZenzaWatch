@@ -54,9 +54,23 @@ const Config = (() => {
     userIdFilter: '',
     commandFilter: '',
     removeNgMatchedUser: false, // NGにマッチしたユーザーのコメント全部消す
+
     'filter.fork0': true, // 通常コメント
     'filter.fork1': true, // 投稿者コメント
     'filter.fork2': true, // かんたんコメント
+    'filter.fork3': true, // AIキャラクターコメント
+
+    'filter.defaultThread': true, // 通常コメント
+    'filter.ownerThread': true, // 投稿者コメント
+    'filter.communityThread': true, // チャンネルコメント / コミュニティコメント
+    'filter.nicosThread': true, // ニコスクリプトコメント
+    'filter.easyThread': true, // かんたんコメント
+    'filter.aiThread': true, // AIキャラクターコメント
+    'filter.extraDefaultThread': true, // ***extra-default
+    'filter.extraOwnerThread': true, // ***extra-owner
+    'filter.extraCommunityThread': true, // 引用コメント
+    'filter.extraNicosThread': true, // ***extra-nicos
+    'filter.extraEasyThread': true, // 引用かんたんコメント
 
     videoTagFilter: '',
     videoOwnerFilter: '',
@@ -68,7 +82,7 @@ const Config = (() => {
     autoCommentSpeedRate: false,
 
     playlistLoop: false,
-    commentLanguage: 'ja_JP',
+    commentLanguage: 'ja-jp',
 
     baseFontFamily: '',
     baseChatScale: 1.0,
@@ -97,6 +111,7 @@ const Config = (() => {
     'commentLayer.enableSlotLayoutEmulation': false,
     'commentLayer.ownerCommentShadowColor': '#008800', // 投稿者コメントの影の色
     'commentLayer.easyCommentOpacity': 0.5, // かんたんコメントの透明度
+    'commentLayer.aiCommentOpacity': 0.5, // かんたんコメントの透明度
 
     overrideGinza: false,     // 動画視聴ページでもGinzaの代わりに起動する
     enableGinzaSlayer: false, // まだ実験中
@@ -108,10 +123,12 @@ const Config = (() => {
     enableVideoSession: true,
     videoServerType: 'dmc',
     // enableDmc: true, // 新サーバーを使うかどうか
-    autoDisableDmc: true, // smileのほうが高画質と思われる動画でdmcを無効にする
+    // autoDisableDmc: true, // smileのほうが高画質と思われる動画でdmcを無効にする
+    autoDisableNew: true, // dmcのほうが高画質と思われる動画でdomandを無効にする
     dmcVideoQuality: 'auto',   // 優先する画質 auto, veryhigh, high, mid, low
-    smileVideoQuality: 'default', // default eco
-    useWellKnownPort: false, // この機能なくなったぽい (常時true相当になった)
+    domandVideoQuality: 'auto', // 優先する画質 auto, 1080p, 720, 480p, 360p, 144p
+    // smileVideoQuality: 'default', // default eco
+    // useWellKnownPort: false, // この機能なくなったぽい (常時true相当になった)
     'video.hls.enable': true,
     'video.hls.segmentDuration': 6000,
     'video.hls.enableOnlyRequired': true, // hlsが必須の動画だけ有効化する

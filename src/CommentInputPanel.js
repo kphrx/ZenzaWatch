@@ -198,6 +198,11 @@ CommentInputPanel.__css__ = (`
     border-radius: 8px;
     background: #fff;
     box-shadow: 0 0 8px #fff;
+    color: #000;
+  }
+  .commentInputPanel:focus-within :where(.commandInput, .commentSubmit) {
+    background: #fff;
+    color: #000;
   }
 
   .commentInputPanel .autoPauseLabel {

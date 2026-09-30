@@ -210,6 +210,7 @@ const workerUtil = (() => {
       function (self) {
       let config = {}, PRODUCT, TOKEN, CONSTANT, NAME = decodeURI('${encodeURI(name)}'), bcast = {}, portMap = {};
       const {Handler, PromiseHandler, Emitter} = (${EmitterInitFunc.toString()})();
+      ${options.inject ?? ''}
       (${func.toString()})(self);
       //===================================
       (${messageWrapper.toString()})(self);

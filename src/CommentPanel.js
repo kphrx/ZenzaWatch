@@ -1029,7 +1029,7 @@ const CommentListItemView = (() => {
       .commentListItem.fork1 .timepos {
         text-shadow: 1px 1px 0 #008800, -1px -1px 0 #008800 !important;
       }
-      .commentListItem.fork2 .timepos {
+      .commentListItem:where(.fork2, .fork3) .timepos {
         opacity: 0.6;
       }
       .commentListItem.fork1 .text {
@@ -1274,6 +1274,12 @@ CommentListItem._itemId = 0;
 
 
 class CommentPanelView extends Emitter {
+  languages = [
+    ['ja-jp', "日本語"],
+    ['en-us', "English (US)"],
+    ['zh-tw', "中文 (繁體)"]
+  ];
+
   constructor(params) {
     super();
     this.$container = params.$container;
@@ -1283,6 +1289,18 @@ class CommentPanelView extends Emitter {
     css.addStyle(CommentPanelView.__css__);
     const $view = this.$view = uq.html(CommentPanelView.__tpl__);
     this.$container.append($view);
+
+    const langs = document.querySelector('.commentLanguageSelector');
+    for (const [language, label] of this.languages) {
+      const list = document.createElement('li');
+      list.className = 'commentPanel-command';
+      Object.assign(list.dataset, {
+        command: 'update-commentLanguage',
+        param: language,
+      });
+      list.textContent = label;
+      langs.append(list);
+    }
 
     const $menu = this._$menu = this.$view.find('.commentPanel-menu');
 
@@ -1317,7 +1335,7 @@ class CommentPanelView extends Emitter {
     global.emitter.on('hideHover', () => $menu.removeClass('show'));
   }
   toggleClass(className, v) {
-    this.$view.raf.toggleClass(className, v);
+    return this.$view.raf.toggleClass(className, v);
   }
   _onModelCurrentTimeUpdate(sec, viewIndex) {
     if (!this.$view){
@@ -1373,11 +1391,12 @@ class CommentPanelView extends Emitter {
   }
   _onCommentPanelStatusUpdate() {
     const commentPanel = this.commentPanel;
-    const $view = this.$view.raf.toggleClass('autoScroll', commentPanel.isAutoScroll);
+    const $view = this.toggleClass('autoScroll', commentPanel.isAutoScroll);
 
     const langClass = `lang-${commentPanel.getLanguage()}`;
     if (!$view.hasClass(langClass)) {
-      $view.raf.removeClass('lang-ja_JP lang-en_US lang-zh_TW').addClass(langClass);
+      $view.raf.removeClass(this.languages.map(([x]) => `lang-${x}`).join(' '));
+      $view.raf.addClass(langClass);
     }
   }
 }
@@ -1467,9 +1486,9 @@ CommentPanelView.__css__ = `
       line-height: 20px;
     }
 
-    .commentPanel-container.lang-ja_JP .commentPanel-command[data-param=ja_JP],
-    .commentPanel-container.lang-en_US .commentPanel-command[data-param=en_US],
-    .commentPanel-container.lang-zh_TW .commentPanel-command[data-param=zh_TW] {
+    .commentPanel-container.lang-ja-jp .commentPanel-command[data-param=ja-jp],
+    .commentPanel-container.lang-en-us .commentPanel-command[data-param=en-us],
+    .commentPanel-container.lang-zh-tw .commentPanel-command[data-param=zh-tw] {
       font-weight: bolder;
       color: #ff9;
     }
@@ -1497,22 +1516,14 @@ CommentPanelView.__tpl__ = (`
               <li class="commentPanel-command" data-command="sortBy" data-param="nicoru:desc">
                 ニコる数で並べる
               </li>
-
-              <hr class="separator">
-              <li class="commentPanel-command" data-command="update-commentLanguage" data-param="ja_JP">
-                日本語
-              </li>
-              <li class="commentPanel-command" data-command="update-commentLanguage" data-param="en_US">
-                English
-              </li>
-              <li class="commentPanel-command" data-command="update-commentLanguage" data-param="zh_TW">
-                中文
-              </li>
+            </ul>
+            <hr class="separator">
+            <ul class="commentLanguageSelector">
             </ul>
             </div>
           </div>
         </div>
-      <div class="timeMachineContainer"></div>
+        <div class="timeMachineContainer"></div>
       </div>
       <div class="commentPanel-frame"></div>
     </div>
@@ -1530,7 +1541,7 @@ class CommentPanel extends Emitter {
     this._autoScroll = _.isBoolean(params.autoScroll) ? params.autoScroll : true;
 
     this._model = new CommentListModel({});
-    this._language = params.language || 'ja_JP';
+    this._language = params.language || 'ja-jp';
 
     player.on('commentParsed', _.debounce(this._onCommentParsed.bind(this), 500));
     player.on('commentChange', _.debounce(this._onCommentChange.bind(this), 500));
@@ -1654,7 +1665,7 @@ class CommentPanel extends Emitter {
     return this._autoScroll;
   }
   getLanguage() {
-    return this._language || 'ja_JP';
+    return this._language || 'ja-jp';
   }
   getThreadInfo() {
     return this._threadInfo;

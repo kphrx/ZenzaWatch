@@ -5,24 +5,6 @@ import {PRODUCT} from '../../../../src/ZenzaWatchIndex';
 //===BEGIN===
 
 const VideoCaptureUtil = (() => {
-  const crossDomainGates = {};
-
-  const initializeByServer = (server, fileId) => {
-    if (crossDomainGates[server]) {
-      return crossDomainGates[server];
-    }
-
-    const baseUrl = `https://${server}/smile?i=${fileId}`;
-
-    crossDomainGates[server] = new CrossDomainGate({
-      baseUrl,
-      origin: `https://${server}/`,
-      type: `storyboard${PRODUCT}_${server.split('.')[0].replace(/-/g, '_')}`
-    });
-
-    return crossDomainGates[server];
-  };
-
   const _toCanvas = (v, width, height) => {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -33,7 +15,7 @@ const VideoCaptureUtil = (() => {
   };
 
   const isCORSReadySrc = src => {
-    if (src.indexOf('dmc.nico') >= 0) {
+    if (src.indexOf('delivery.domand.nicovideo.jp') >= 0 || src.indexOf('dmc.nico') >= 0) {
       return true;
     }
     return false;
@@ -51,33 +33,7 @@ const VideoCaptureUtil = (() => {
       return Promise.resolve({canvas: _toCanvas(video, video.videoWidth, video.videoHeight)});
     }
 
-    return new Promise(async (resolve, reject) => {
-      if (!/\?(.)=(\d+)\.(\d+)/.test(search)) {
-        return reject({status: 'fail', message: 'invalid url', url: src});
-      }
-      const fileId = RegExp.$2;
-
-      const gate = initializeByServer(server, fileId);
-
-      const dataUrl = await gate.videoCapture(src, sec);
-
-      const bin = atob(dataUrl.split(',')[1]);
-      const buf = new Uint8Array(bin.length);
-      for (let i = 0, len = buf.length; i < len; i++) {
-        buf[i] = bin.charCodeAt(i);
-      }
-      const blob = new Blob([buf.buffer], {type: 'image/png'});
-      const url = URL.createObjectURL(blob);
-      console.info('createObjectUrl', url.length);
-
-      const img = new Image();
-
-      img.src = url;
-      img.decode()
-        .then(() => resolve({canvas: _toCanvas(img, video.videoWidth, video.videoHeight)}))
-        .catch(err => reject(err))
-        .finally(() => window.setTimeout(() => URL.revokeObjectURL(url), 10000));
-    });
+    return Promise.reject({status: 'fail', message: 'not supported url', url: src})
   };
 
   // 参考

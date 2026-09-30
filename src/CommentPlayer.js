@@ -60,6 +60,8 @@ class NicoCommentPlayer extends Emitter {
       }
     } else if (typeof data.getElementsByTagName === 'function') {
       this._model.setXml(data, options);
+    } else if (options.format === 'threads') {
+      this._model.setThreads(data, options);
     } else {
       this._model.setData(data, options);
     }

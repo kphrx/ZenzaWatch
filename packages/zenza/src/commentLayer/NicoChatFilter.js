@@ -15,9 +15,23 @@ class NicoChatFilter extends Emitter {
     this.wordFilterList = params.wordFilter || '';
     this.userIdFilterList = params.userIdFilter || '';
     this.commandFilterList = params.commandFilter || '';
+
     this._fork0 = typeof params.fork0 === 'boolean' ? params.fork0 : true;
     this._fork1 = typeof params.fork1 === 'boolean' ? params.fork1 : true;
     this._fork2 = typeof params.fork2 === 'boolean' ? params.fork2 : true;
+    this._fork3 = typeof params.fork3 === 'boolean' ? params.fork3 : true;
+
+    this._defaultThread = typeof params.defaultThread === 'boolean' ? params.defaultThread : true;
+    this._ownerThread = typeof params.ownerThread === 'boolean' ? params.ownerThread : true;
+    this._communityThread = typeof params.communityThread === 'boolean' ? params.communityThread : true;
+    this._nicosThread = typeof params.nicosThread === 'boolean' ? params.nicosThread : true;
+    this._easyThread = typeof params.easyThread === 'boolean' ? params.easyThread : true;
+    this._aiThread = typeof params.aiThread === 'boolean' ? params.aiThread : true;
+    this._extraDefaultThread = typeof params.extraDefaultThread === 'boolean' ? params.extraDefaultThread : true;
+    this._extraOwnerThread = typeof params.extraOwnerThread === 'boolean' ? params.extraOwnerThread : true;
+    this._extraCommunityThread = typeof params.extraCommunityThread === 'boolean' ? params.extraCommunityThread : true;
+    this._extraNicosThread = typeof params.extraNicosThread === 'boolean' ? params.extraNicosThread : true;
+    this._extraEasyThread = typeof params.extraEasyThread === 'boolean' ? params.extraEasyThread : true;
 
     this._enable = typeof params.enableFilter === 'boolean' ? params.enableFilter : true;
 
@@ -71,6 +85,90 @@ class NicoChatFilter extends Emitter {
     v = !!v;
     if (this._fork2 === v) { return; }
     this._fork2 = v;
+    this.refresh();
+  }
+  get fork3() { return this._fork3; }
+  set fork3(v) {
+    v = !!v;
+    if (this._fork3 === v) { return; }
+    this._fork3 = v;
+    this.refresh();
+  }
+  get defaultThread() { return this._defaultThread; }
+  set defaultThread(v) {
+    v = !!v;
+    if (this._defaultThread === v) { return; }
+    this._defaultThread = v;
+    this.refresh();
+  }
+  get ownerThread() { return this._ownerThread; }
+  set ownerThread(v) {
+    v = !!v;
+    if (this._ownerThread === v) { return; }
+    this._ownerThread = v;
+    this.refresh();
+  }
+  get communityThread() { return this._communityThread; }
+  set communityThread(v) {
+    v = !!v;
+    if (this._communityThread === v) { return; }
+    this._communityThread = v;
+    this.refresh();
+  }
+  get nicosThread() { return this._nicosThread; }
+  set nicosThread(v) {
+    v = !!v;
+    if (this._nicosThread === v) { return; }
+    this._nicosThread = v;
+    this.refresh();
+  }
+  get easyThread() { return this._easyThread; }
+  set easyThread(v) {
+    v = !!v;
+    if (this._easyThread === v) { return; }
+    this._easyThread = v;
+    this.refresh();
+  }
+  get aiThread() { return this._aiThread; }
+  set aiThread(v) {
+    v = !!v;
+    if (this._aiThread === v) { return; }
+    this._aiThread = v;
+    this.refresh();
+  }
+  get extraDefaultThread() { return this._extraDefaultThread; }
+  set extraDefaultThread(v) {
+    v = !!v;
+    if (this._extraDefaultThread === v) { return; }
+    this._extraDefaultThread = v;
+    this.refresh();
+  }
+  get extraOwnerThread() { return this._extraOwnerThread; }
+  set extraOwnerThread(v) {
+    v = !!v;
+    if (this._extraOwnerThread === v) { return; }
+    this._extraOwnerThread = v;
+    this.refresh();
+  }
+  get extraCommunityThread() { return this._extraCommunityThread; }
+  set extraCommunityThread(v) {
+    v = !!v;
+    if (this._extraCommunityThread === v) { return; }
+    this._extraCommunityThread = v;
+    this.refresh();
+  }
+  get extraNicosThread() { return this._extraNicosThread; }
+  set extraNicosThread(v) {
+    v = !!v;
+    if (this._extraNicosThread === v) { return; }
+    this._extraNicosThread = v;
+    this.refresh();
+  }
+  get extraEasyThread() { return this._extraEasyThread; }
+  set extraEasyThread(v) {
+    v = !!v;
+    if (this._extraEasyThread === v) { return; }
+    this._extraEasyThread = v;
     this.refresh();
   }
   refresh() { this._onChange(); }
@@ -288,26 +386,42 @@ class NicoChatFilter extends Emitter {
     };
   }
   applyFilter(nicoChatArray) {
-    let before = nicoChatArray.length;
+    const before = nicoChatArray.length;
     if (before < 1) {
       return nicoChatArray;
     }
-    let timeKey = 'applyNgFilter: ' + nicoChatArray[0].type;
+    const timeKey = 'applyNgFilter: ' + nicoChatArray[0].type;
     window.console.time(timeKey);
-    let filterFunc = this.getFilterFunc();
+    const filterFunc = this.getFilterFunc();
     let result = nicoChatArray.filter(filterFunc);
-    if (before.length !== result.length && this._removeNgMatchedUser) {
-      let removedUserIds =
-        nicoChatArray.filter(chat => !result.includes(chat)).map(chat => chat.userId);
-      result = result.filter(chat => !removedUserIds.includes(chat.userId));
-    }
-    if (!this.fork0 || !this.fork1 || !this.fork2) {
-      const allows = [];
-      this._fork0 && allows.push(0);
-      this._fork1 && allows.push(1);
-      this._fork2 && allows.push(2);
-      result = result.filter(chat => allows.includes(chat.fork));
-    }
+    const removedUserIds = (before !== result.length && this._removeNgMatchedUser)
+      ? nicoChatArray.filter(chat => !result.includes(chat)).map(chat => chat.userId)
+      : [];
+    const denyTypes = [
+      !this.fork0 && 0,
+      !this.fork1 && 1,
+      !this.fork2 && 2,
+      !this.fork3 && 3,
+    ].filter(type => type !== false);
+    const denyThreadTypes = [
+      !this.defaultThread        && 'default',
+      !this.ownerThread          && 'owner',
+      !this.communityThread      && 'community',
+      !this.nicosThread          && 'nicos',
+      !this.easyThread           && 'easy',
+      !this.aiThread             && 'ai',
+      !this.extraDefaultThread   && 'extra-default',
+      !this.extraOwnerThread     && 'extra-owner',
+      !this.extraCommunityThread && 'extra-community',
+      !this.extraNicosThread     && 'extra-nicos',
+      !this.extraEasyThread      && 'extra-easy',
+    ].filter(type => type !== false);
+    result = result.filter(chat => {
+      if (removedUserIds.length > 0 && removedUserIds.includes(chat.userId)) {
+        return false;
+      }
+      return !denyTypes.includes(chat.fork) && !denyThreadTypes.includes(chat.threadLabel);
+    });
     window.console.timeEnd(timeKey);
     window.console.log('NG判定結果: %s/%s', result.length, before);
     return result;

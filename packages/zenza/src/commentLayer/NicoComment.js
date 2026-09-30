@@ -51,6 +51,27 @@ class NicoComment extends Emitter {
     const chatsData = Array.from(xml.getElementsByTagName('chat')).filter(chat => chat.firstChild);
     return this.setChats(chatsData, options);
   }
+  setThreads(data, options) {
+    const chatsData = data.threads.flatMap(thread => {
+      return thread.comments.map(c => {
+        return Object.assign({
+          text: c.body,
+          date: new Date(c.postedAt).getTime() / 1000,
+          cmd: c.commands.join(' '),
+          premium: c.isPremium,
+          user_id: c.userId,
+          vpos: c.vposMs / 10,
+          fork: thread.info.fork,
+          isMine: c.isMyPost,
+          thread: thread.id,
+          nicoru: c.nicoruCount,
+          layerId: thread.info.layer.index,
+          threadLabel: thread.info.label,
+        }, c);
+      })
+    });
+    return this.setChats(chatsData, options);
+  }
   async setData(data, options) {
     await this.promise('GetReady!');
 
