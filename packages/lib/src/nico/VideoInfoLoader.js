@@ -75,6 +75,9 @@ const VideoInfoLoader = (function () {
         initialPlayback, // nullable
         // layerMode,
       },
+      lazy: {
+        authKey: additionalInfoKey,
+      },
       // system,
       tags: {
         edit: tagEdit,
@@ -120,7 +123,6 @@ const VideoInfoLoader = (function () {
       // videoAds,
       // videoLive,
       viewer, // nullable
-      // waku,
     } = _data;
 
     const commentServer = null;
@@ -226,6 +228,7 @@ const VideoInfoLoader = (function () {
       },
       viewerInfo,
       ownerInfo,
+      additionalInfoKey,
       clientTrackId: watchTrackId,
     };
 
@@ -242,7 +245,6 @@ const VideoInfoLoader = (function () {
       thumbnailUrl,
       csrfToken,
       watchAuthKey,
-      series,
       genreKey,
       ngFilters,
 
@@ -257,6 +259,32 @@ const VideoInfoLoader = (function () {
     return result;
   };
 
+  const loadAdditionalWatchData = (data) => {
+    const videoId = data.videoDetail.id;
+    const url = `https://nvapi.nicovideo.jp/v4/watch/lazy/${videoId}`;
+    return new Promise(r => {
+      setTimeout(r, 1000);
+    }).then(() => netUtil.fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-Frontend-Id': 6,
+        'X-Frontend-Version': 0,
+        'X-Niconico-Language': 'ja-jp',
+        'X-Request-With': 'https://www.nicovideo.jp',
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        actionTrackId: data.clientTrackId,
+        keyToken: data.additionalInfoKey,
+      }),
+    }))
+      .then(res => res.json())
+      .then(json => json.data)
+      .catch(() => {
+        return Promise.reject({reason: 'network', message: '通信エラー(loadAdditionalWatchData)'});
+      });
+  };
 
   const loadLinkedChannelVideoInfo = (originalData) => {
     const linkedChannelVideo = originalData.linkedChannelVideo;
@@ -291,17 +319,18 @@ const VideoInfoLoader = (function () {
 
   const onLoadPromise = async (watchId, options, isRetry, resp) => {
     const data = parseWatchApiData(resp);
-    debug.watchApiData = data;
     if (!data) {
+      debug.watchApiData = null;
       throw {
         reason: 'network',
         message: '通信エラー。動画情報の取得に失敗しました。(watch api)'
       };
     }
 
-    if (data.reject) {
-      throw data;
-    }
+    const lazy = await loadAdditionalWatchData(data.watchApiData);
+    data._lazy = lazy;
+    data.series = lazy.series;
+    debug.watchApiData = data;
 
     if (data.isPlayable) {
       emitter.emitAsync('loadVideoInfo', data, 'WATCH_API', watchId);
