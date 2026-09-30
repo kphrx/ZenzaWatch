@@ -315,7 +315,9 @@ class StoryboardView extends Emitter {
     );
   }
   _updateFail() {
-    ClassList(this._view).remove('is-uccess').add('is-fail');
+    const cl = ClassList(this._view);
+    cl.remove('is-success');
+    cl.add('is-fail');
   }
   setCurrentTime(sec, forceUpdate) {
     const model = this._model;
