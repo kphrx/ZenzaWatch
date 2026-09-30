@@ -1,4 +1,4 @@
-// https://api.commons.nicovideo.jp/tree/summary/get?id=sm33824596&limit=200&callback=jsonp_1561173348292_76356
+// https://api.commons.nicovideo.jp/works/summary/get?id=sm33824596&limit=200&callback=jsonp_1561173348292_76356
 
 
 export const commonsTreeData = {
