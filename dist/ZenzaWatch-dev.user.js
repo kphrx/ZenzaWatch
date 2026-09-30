@@ -30817,7 +30817,7 @@ class HoverMenu {
 		if (json.meta.status > 299) {
 			return false;
 		}
-		return typeof json.data.response.okReason === 'string';
+		return typeof json.data.response.$watchV4.data.okReason === 'string';
 	};
 	const initWorker = () => {
 		if (!location.host.endsWith('.nicovideo.jp')) { return; }
