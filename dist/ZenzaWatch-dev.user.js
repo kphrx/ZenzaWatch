@@ -7116,7 +7116,7 @@ const IchibaLoader = {
 };
 const CommonsTreeLoader = {
 	load: contentId => {
-		const api = 'https://api.commons.nicovideo.jp/tree/summary/get';
+		const api = 'https://api.commons.nicovideo.jp/works/summary/get';
 		const url = `${api}?id=${contentId}&limit=200`;
 		return netUtil.jsonp(url);
 	}
@@ -30292,7 +30292,7 @@ class RelatedInfoMenu extends BaseViewComponent {
 		this._ginzaLink.setAttribute('href', `//www.nicovideo.jp/watch/${wid}`);
 		this._originalLink.setAttribute('href', `//www.nicovideo.jp/watch/${vid}`);
 		this._twitterLink.setAttribute('href', `https://twitter.com/hashtag/${vid}`);
-		this._parentVideoLink.setAttribute('href', `//commons.nicovideo.jp/tree/${vid}`);
+		this._parentVideoLink.setAttribute('href', `//commons.nicovideo.jp/works/${vid}`);
 		this.emit('close');
 	}
 	_onCommand(command, param) {
