@@ -16,7 +16,7 @@ const VideoInfoLoader = (function () {
   const cacheStorage = new CacheStorage(sessionStorage);
 
   const parseWatchApiData = function (json) {
-    const _data = json.data.response;
+    const _data = json.data.response.$watchV4.data;
     const {
       // ads,
       // category,
@@ -27,10 +27,8 @@ const VideoInfoLoader = (function () {
         watchTrackId,
       },
       comment: {
+        // assist
         // isAttentionRequired,
-        keys: {
-          userKey,
-        },
         layers,
         ng: {
           channel: channelNg,
@@ -39,19 +37,10 @@ const VideoInfoLoader = (function () {
           // viewer,
         },
         nvComment,
-        server: {
-          url: commentServer,
-        },
         threads,
       },
       community, // nullable
       // easyComment,
-      external: {
-        commons: {
-          hasContentTree,
-        },
-        // ichiba,
-      },
       genre: {
         // isDisabled,
         // isImmoral,
@@ -60,22 +49,31 @@ const VideoInfoLoader = (function () {
         // label,
       },
       // marquee,
-      media: {
-        delivery: dmcInfo, // nullable
-        // deliveryLegacy,
-        domand: domandInfo, // nullable
+      media,
+      metadata: {
+        // gtm,
+        jsonLd: {
+          owner,
+          // videoObject,
+        },
       },
       // okReason,
-      owner, // nullable
       payment: {
-        // preview,
-        video: {
-          // commentableUserType,
-          isAdmission: isMemberFree,
-          isPpv: isNeedPayment,
-          isPremium: isPremiumFree,
-          // watchableUserType,
+        // commentableUserType,
+        // billingType,
+        admission: {
+          isEnabled: isMemberFree,
+          // showPromotion,
         },
+        ppv: {
+          isEnabled: isNeedPayment,
+          // showPromotion,
+        },
+        premium: {
+          isEnabled: isPremiumFree,
+          // showPromotion,
+        },
+        // watchableUserType,
       },
       // pcWatchPage,
       player: {
@@ -88,16 +86,14 @@ const VideoInfoLoader = (function () {
       series,
       // smartphone,
       // system,
-      tag: {
+      tags: {
         edit: tagEdit,
         // hasR18Tag,
         // isPublishedNicoscript,
         items: tags,
-        // viewer,
       },
       video: {
-        // 9d091f87, // version hash?
-        // commentableUserTypeForPayment,
+        // contentType,
         count: {
           comment: commentCount,
           like: likeCount,
@@ -115,12 +111,14 @@ const VideoInfoLoader = (function () {
         // isPrivate,
         // rating,
         registeredAt,
+        // supplements,
         thumbnail: {
-          largeUrl: thumbnailUrl, // null
-          // middleUrl,
+          large: largeThumbnail, // null
+          // middle,
+          normal: normalThumbnail,
           // ogp,
-          url: thumbnail,
-          player: largeThumbnail,
+          player: playerThumbnail,
+          // short,
         },
         title,
         viewer: videoStatusForViewer, // nullable
@@ -132,12 +130,11 @@ const VideoInfoLoader = (function () {
       // waku,
     } = _data;
 
-    const hasLargeThumbnail = nicoUtil.hasLargeThumbnail(videoId);
     const csrfToken = null;
     const watchAuthKey = null;
     threads.forEach(thread => {
-      thread.layer = layers.find(({threadIds}) => {
-        return threadIds.some(({id, fork}) => id === thread.id && fork === thread.fork);
+      thread.layer = layers.find(layer => {
+        return layer.components.some(comp => comp.threadId == thread.id && comp.fork == thread.fork);
       });
     });
     const resumeInfo = (() => {
@@ -158,9 +155,9 @@ const VideoInfoLoader = (function () {
       } = { ...viewer };
       return { id, isPremium };
     })();
-    const defaultThread = threads.find(t => t.isDefaultPostTarget);
+    const defaultThread = threads.find(t => t.isPostTarget);
     const msgInfo = {
-      server: commentServer,
+      server: nvComment.server,
       threadId: defaultThread.id,
       duration,
       videoId,
@@ -171,13 +168,14 @@ const VideoInfoLoader = (function () {
       defaultThread,
       optionalThreads: threads.filter(t => t.id !== defaultThread.id) || [],
       threads,
-      userKey,
       hasOwnerThread: threads.find(t => t.isOwnerThread),
       when: null,
       frontendId: 6,
       frontendVersion: 0
     };
 
+    const dmcInfo = media?.delivery;
+    const domandInfo = media;
     const isDmc = dmcInfo?.movie.session != null;
     const isDomand = domandInfo != null;
     const isPlayable = isDmc || isDomand;
@@ -233,22 +231,17 @@ const VideoInfoLoader = (function () {
     if (owner) {
       const {
         // channel,
+        // description,
         iconUrl,
         id,
-        // isMylistsPublic,
-        // isVideosPublic,
-        // live,
-        nickname,
-        // videoLiveNotice,
-        // viewer: {
-        //   isFollowing,
-        // },
+        name,
+        // type,
       } = { ...owner };
       uploaderInfo = {
         iconUrl,
         id,
         linkId: `user/${id}`,
-        name: nickname,
+        name,
       };
     }
 
@@ -261,11 +254,12 @@ const VideoInfoLoader = (function () {
         description,
         // description_original: data.video.originalDescription,
         postedAt: registeredAt,
-        thumbnail,
-        largeThumbnail,
+        thumbnail: normalThumbnail,
+        largeThumbnail: playerThumbnail,
         length: duration,
 
-        commons_tree_exists: hasContentTree,
+        // XXX: API data no longer contains this info. Fixed to true temporarily.
+        commons_tree_exists: true,
 
         // width: data.video.width, // dmcInfo?.movie.videos[0].metadata.resolution.width
         // height: data.video.height, // dmcInfo?.movie.videos[0].metadata.resolution.height
@@ -290,7 +284,7 @@ const VideoInfoLoader = (function () {
       clientTrackId: watchTrackId,
     };
 
-    const ngFilters = Array.prototype.concat(channelNg, ownerNg);
+    const ngFilters = Array.prototype.concat(channelNg ?? [], ownerNg);
 
     const result = {
       _format: 'html5watchApi',
@@ -303,7 +297,7 @@ const VideoInfoLoader = (function () {
       isPlayable,
       isDomand,
       isDmc,
-      thumbnailUrl,
+      thumbnailUrl: largeThumbnail,
       csrfToken,
       watchAuthKey,
       series,

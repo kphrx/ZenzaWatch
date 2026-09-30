@@ -6270,7 +6270,7 @@ const CacheStorage = (() => {
 const VideoInfoLoader = (function () {
 	const cacheStorage = new CacheStorage(sessionStorage);
 	const parseWatchApiData = function (json) {
-		const _data = json.data.response;
+		const _data = json.data.response.$watchV4.data;
 		const {
 			channel, // nullable
 			client: {
@@ -6278,46 +6278,40 @@ const VideoInfoLoader = (function () {
 				watchTrackId,
 			},
 			comment: {
-				keys: {
-					userKey,
-				},
 				layers,
 				ng: {
 					channel: channelNg,
 					owner: ownerNg,
 				},
 				nvComment,
-				server: {
-					url: commentServer,
-				},
 				threads,
 			},
 			community, // nullable
-			external: {
-				commons: {
-					hasContentTree,
-				},
-			},
 			genre: {
 				key: genreKey,
 			},
-			media: {
-				delivery: dmcInfo, // nullable
-				domand: domandInfo, // nullable
+			media,
+			metadata: {
+				jsonLd: {
+					owner,
+				},
 			},
-			owner, // nullable
 			payment: {
-				video: {
-					isAdmission: isMemberFree,
-					isPpv: isNeedPayment,
-					isPremium: isPremiumFree,
+				admission: {
+					isEnabled: isMemberFree,
+				},
+				ppv: {
+					isEnabled: isNeedPayment,
+				},
+				premium: {
+					isEnabled: isPremiumFree,
 				},
 			},
 			player: {
 				initialPlayback, // nullable
 			},
 			series,
-			tag: {
+			tags: {
 				edit: tagEdit,
 				items: tags,
 			},
@@ -6333,21 +6327,20 @@ const VideoInfoLoader = (function () {
 				id: videoId,
 				registeredAt,
 				thumbnail: {
-					largeUrl: thumbnailUrl, // null
-					url: thumbnail,
-					player: largeThumbnail,
+					large: largeThumbnail, // null
+					normal: normalThumbnail,
+					player: playerThumbnail,
 				},
 				title,
 				viewer: videoStatusForViewer, // nullable
 			},
 			viewer, // nullable
 		} = _data;
-		const hasLargeThumbnail = nicoUtil.hasLargeThumbnail(videoId);
 		const csrfToken = null;
 		const watchAuthKey = null;
 		threads.forEach(thread => {
-			thread.layer = layers.find(({threadIds}) => {
-				return threadIds.some(({id, fork}) => id === thread.id && fork === thread.fork);
+			thread.layer = layers.find(layer => {
+				return layer.components.some(comp => comp.threadId == thread.id && comp.fork == thread.fork);
 			});
 		});
 		const resumeInfo = (() => {
@@ -6368,9 +6361,9 @@ const VideoInfoLoader = (function () {
 			} = { ...viewer };
 			return { id, isPremium };
 		})();
-		const defaultThread = threads.find(t => t.isDefaultPostTarget);
+		const defaultThread = threads.find(t => t.isPostTarget);
 		const msgInfo = {
-			server: commentServer,
+			server: nvComment.server,
 			threadId: defaultThread.id,
 			duration,
 			videoId,
@@ -6381,12 +6374,13 @@ const VideoInfoLoader = (function () {
 			defaultThread,
 			optionalThreads: threads.filter(t => t.id !== defaultThread.id) || [],
 			threads,
-			userKey,
 			hasOwnerThread: threads.find(t => t.isOwnerThread),
 			when: null,
 			frontendId: 6,
 			frontendVersion: 0
 		};
+		const dmcInfo = media?.delivery;
+		const domandInfo = media;
 		const isDmc = dmcInfo?.movie.session != null;
 		const isDomand = domandInfo != null;
 		const isPlayable = isDmc || isDomand;
@@ -6427,13 +6421,13 @@ const VideoInfoLoader = (function () {
 			const {
 				iconUrl,
 				id,
-				nickname,
+				name,
 			} = { ...owner };
 			uploaderInfo = {
 				iconUrl,
 				id,
 				linkId: `user/${id}`,
-				name: nickname,
+				name,
 			};
 		}
 		const watchApiData = {
@@ -6443,10 +6437,10 @@ const VideoInfoLoader = (function () {
 				title,
 				description,
 				postedAt: registeredAt,
-				thumbnail,
-				largeThumbnail,
+				thumbnail: normalThumbnail,
+				largeThumbnail: playerThumbnail,
 				length: duration,
-				commons_tree_exists: hasContentTree,
+				commons_tree_exists: true,
 				isChannel: channel && channel.id,
 				isMymemory: false,
 				communityId: community?.id ?? null,
@@ -6464,7 +6458,7 @@ const VideoInfoLoader = (function () {
 			uploaderInfo,
 			clientTrackId: watchTrackId,
 		};
-		const ngFilters = Array.prototype.concat(channelNg, ownerNg);
+		const ngFilters = Array.prototype.concat(channelNg ?? [], ownerNg);
 		const result = {
 			_format: 'html5watchApi',
 			_data,
@@ -6476,7 +6470,7 @@ const VideoInfoLoader = (function () {
 			isPlayable,
 			isDomand,
 			isDmc,
-			thumbnailUrl,
+			thumbnailUrl: largeThumbnail,
 			csrfToken,
 			watchAuthKey,
 			series,
@@ -7489,7 +7483,7 @@ class DomandInfo extends JSONable {
 		return this._rawData.accessRightKey || '';
 	}
 	get audios() {
-		return this._rawData.audios.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
+		return this._rawData.contents.audios.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
 	}
 	get availableAudios() {
 		return this.audios.filter(a => a.isAvailable);
@@ -7498,7 +7492,7 @@ class DomandInfo extends JSONable {
 		return this.availableAudios.map(a => a.id);
 	}
 	get videos() {
-		return this._rawData.videos.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
+		return this._rawData.contents.videos.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
 	}
 	get availableVideos() {
 		return this.videos.filter(v => v.isAvailable);

@@ -39,7 +39,7 @@ class DomandInfo extends JSONable {
   }
 
   get audios() {
-    return this._rawData.audios.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
+    return this._rawData.contents.audios.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
   }
 
   get availableAudios() {
@@ -51,7 +51,7 @@ class DomandInfo extends JSONable {
   }
 
   get videos() {
-    return this._rawData.videos.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
+    return this._rawData.contents.videos.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
   }
 
   get availableVideos() {
