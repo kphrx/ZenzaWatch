@@ -122,7 +122,8 @@ const {initialize} = (() => {
       return false;
     }
 
-    return typeof json.data.response.$watchV4.data.okReason === 'string';
+    return (typeof json.data.response.okReason === 'string')
+      || (typeof json.data.response.$watchV4.data.okReason === 'string');
   };
 
   const initWorker = () => {

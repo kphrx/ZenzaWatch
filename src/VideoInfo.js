@@ -38,12 +38,8 @@ class DomandInfo extends JSONable {
     return this._rawData.accessRightKey || '';
   }
 
-  get contents() {
-    return this._rawData.contents;
-  }
-
   get audios() {
-    return this.contents.audios.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
+    return this._rawData.audios.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
   }
 
   get availableAudios() {
@@ -55,7 +51,7 @@ class DomandInfo extends JSONable {
   }
 
   get videos() {
-    return this.contents.videos.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
+    return this._rawData.videos.toSorted((a, b) => b.qualityLevel > a.qualityLevel);
   }
 
   get availableVideos() {
