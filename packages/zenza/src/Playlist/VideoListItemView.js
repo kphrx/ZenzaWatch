@@ -341,7 +341,7 @@ class VideoListItemView  {
             <span class="command pocket-info" data-command="pocket-info" data-param=${watchId} title="動画情報">？</span>
           </div>
           <div class="videoInfo">
-            <div class="postedAt">${item.postedAt}</div>
+            <div class="postedAt">${new Date(item.postedAt).toLocaleString()}</div>
             <div class="title">
               <a class="command videoLink"
                 href=${watchUrl} data-command="select" data-param=${itemId} title=${title}>${title}</a>

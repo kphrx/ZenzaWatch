@@ -2857,7 +2857,7 @@ class VideoMetaInfo extends BaseViewComponent {
   }
 
   update(videoInfo) {
-    this._elm.postedAt.textContent = videoInfo.postedAt;
+    this._elm.postedAt.textContent = new Date(videoInfo.postedAt).toLocaleString();
     const count = videoInfo.count;
     this.updateVideoCount(count);
   }

@@ -203,7 +203,7 @@ const VideoInfoLoader = (function () {
         // title_original: data.video.originalTitle,
         description,
         // description_original: data.video.originalDescription,
-        postedAt: new Date(registeredAt).toLocaleString(),
+        postedAt: registeredAt,
         thumbnail,
         largeThumbnail,
         length: duration,
