@@ -32,7 +32,7 @@
 // @exclude        *://ext.nicovideo.jp/thumb_channel/*
 // @grant          none
 // @author         segabito
-// @version        2.6.3-fix-playlist.55
+// @version        2.6.3-fix-playlist.56
 // @run-at         document-body
 // @require        https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js
 // @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaWatch-dev.user.js
@@ -101,7 +101,7 @@ AntiPrototypeJs();
     let {dimport, workerUtil, IndexedDbStorage, Handler, PromiseHandler, Emitter, parseThumbInfo, WatchInfoCacheDb, StoryboardCacheDb, VideoSessionWorker} = window.ZenzaLib;
     START_PAGE_QUERY = decodeURIComponent(START_PAGE_QUERY);
 
-    var VER = '2.6.3-fix-playlist.55';
+    var VER = '2.6.3-fix-playlist.56';
     const ENV = 'DEV';
 
 
@@ -6367,10 +6367,39 @@ const VideoInfoLoader = (function () {
 			id: viewer?.id ?? 0,
 			isPremium: viewer?.isPremium ?? false,
 		};
+		let ownerInfo;
+		if (channel != null) {
+			const {
+				id,
+				name,
+				thumbnail: {
+					url,
+					smallUrl,
+				},
+			} = { ...channel };
+			ownerInfo = {
+				type: "channel",
+				iconUrl: smallUrl ?? url,
+				id,
+				name,
+			}
+		}
+		if (owner != null) {
+			const {
+				id,
+				nickname: name,
+				iconUrl,
+			} = { ...owner };
+			ownerInfo = {
+				type: "user",
+				iconUrl,
+				id,
+				name,
+			}
+		}
 		return {
 			_version: "3",
 			_data,
-			channel,
 			client: {
 				watchId,
 				watchTrackId,
@@ -6392,7 +6421,6 @@ const VideoInfoLoader = (function () {
 			genre: {
 				key: genreKey,
 			},
-			owner,
 			payment: {
 				isNeedPayment,
 				isMemberFree,
@@ -6422,6 +6450,7 @@ const VideoInfoLoader = (function () {
 				isLiked,
 			},
 			domandInfo,
+			ownerInfo,
 			viewerInfo,
 			resumeInfo,
 		};
@@ -6450,7 +6479,7 @@ const VideoInfoLoader = (function () {
 			media, // nullable
 			metadata: {
 				jsonLd: {
-					owner: ownerInfo,
+					owner,
 				},
 			},
 			payment: {
@@ -6523,6 +6552,12 @@ const VideoInfoLoader = (function () {
 			id: viewer?.id ?? 0,
 			isPremium: viewer?.isPremium ?? false,
 		};
+		const ownerInfo = {
+			type,
+			id,
+			name,
+			iconUrl,
+		} = owner;
 		const {
 			contents: domandContent,
 			...domandInfo
@@ -6543,7 +6578,6 @@ const VideoInfoLoader = (function () {
 			genre: {
 				key: genreKey,
 			},
-			owner: ownerInfo,
 			payment: {
 				isNeedPayment,
 				isMemberFree,
@@ -6585,6 +6619,7 @@ const VideoInfoLoader = (function () {
 				...domandContent,
 				...domandInfo,
 			},
+			ownerInfo,
 			viewerInfo,
 			resumeInfo,
 		};
@@ -6675,7 +6710,6 @@ const VideoInfoLoader = (function () {
 				largeThumbnail: _data.video.thumbnail.player,
 				length: _data.video.duration,
 				commons_tree_exists: _data.external?.commons?.hasContentTree ?? true,
-				isChannel: _data.owner?.type === "channel" || _data.channel != null,
 				isMymemory: false,
 				communityId: _data.community?.id ?? null,
 				isLiked: _data.video.isLiked,
@@ -6687,7 +6721,7 @@ const VideoInfoLoader = (function () {
 				tagEdit: _data.tagEdit,
 			},
 			viewerInfo: _data.viewerInfo,
-			ownerInfo: _data.owner,
+			ownerInfo: _data.ownerInfo,
 			additionalInfoKey: _data.lazy?.authKey,
 			clientTrackId: _data.client.watchTrackId,
 		};
@@ -7871,7 +7905,6 @@ class VideoFilter {
 	}
 	isNgVideo(videoInfo) {
 		let isNg = false;
-		let isChannel = videoInfo.isChannel;
 		let ngTag = this.ngTag;
 		videoInfo.tagList.forEach(tag => {
 			let text = (tag.name || '').toLowerCase();
@@ -8001,7 +8034,7 @@ class VideoInfoModel extends JSONable {
 		};
 	}
 	get isChannel() {
-		return !!this._videoDetail.isChannel;
+		return this._watchApiData.ownerInfo.type === "channel";
 	}
 	get isMymemory() {
 		return !!this._videoDetail.isMymemory;
@@ -8062,35 +8095,29 @@ class VideoInfoModel extends JSONable {
 		return this.hasDomandStoryboard || this.hasDmcStoryboard;
 	}
 	get owner() {
-		if (this.isChannel) {
-			let {
-				iconUrl = 'https://secure-dcdn.cdn.nimg.jp/nicoaccount/usericon/defaults/blank.jpg',
-				id,
-				type,
-				name,
-			} = {...this._watchApiData.ownerInfo};
+		const {
+			iconUrl: icon = 'https://secure-dcdn.cdn.nimg.jp/nicoaccount/usericon/defaults/blank.jpg',
+			id,
+			type,
+			name,
+		} = {...this._watchApiData.ownerInfo};
+		if (type === "channel") {
 			return {
 				type,
 				url: `https://ch.nicovideo.jp/${id}`,
-				icon: iconUrl,
+				icon,
 				id,
 				linkId: id,
 				name,
 			};
 		} else {
-			let {
-				iconUrl = 'https://secure-dcdn.cdn.nimg.jp/nicoaccount/usericon/defaults/blank.jpg',
-				id,
-				type,
-				name = '(非公開ユーザー)',
-			} = {...this._watchApiData.ownerInfo};
 			return {
 				type,
 				url: id ? `https://www.nicovideo.jp/user/${id}` : '#',
-				icon: iconUrl,
+				icon,
 				id,
 				linkId: `user/${id}`,
-				name,
+				name: name ?? '(非公開ユーザー)',
 			};
 		}
 	}
