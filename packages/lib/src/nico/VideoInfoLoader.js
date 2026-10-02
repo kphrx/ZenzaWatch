@@ -197,7 +197,10 @@ const VideoInfoLoader = (function () {
       genre: {
         key: genreKey,
       },
-      owner,
+      owner: {
+          name: owner.nickname,
+          ...owner
+      },
       payment: {
         isNeedPayment,
         isMemberFree,
