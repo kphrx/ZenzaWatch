@@ -171,11 +171,49 @@ const VideoInfoLoader = (function () {
       // allowSensitiveContents,
       // existence,
     };
+    let ownerInfo;
+    if (channel != null) {
+      const {
+        id,
+        name,
+        thumbnail: {
+          url,
+          smallUrl,
+        },
+        // isOfficialAnime,
+        // isDisplayAdBanner,
+        // viewer,
+      } = { ...channel };
+      ownerInfo = {
+        type: "channel",
+        iconUrl: smallUrl ?? url,
+        id,
+        name,
+      }
+    }
+    if (owner != null) {
+      const {
+        id,
+        nickname: name,
+        iconUrl,
+        // channel,
+        // live,
+        // isVideosPublic,
+        // isMylistsPublic,
+        // videoLiveNotice,
+        // viewer,
+      } = { ...owner };
+      ownerInfo = {
+        type: "user",
+        iconUrl,
+        id,
+        name,
+      }
+    }
 
     return {
       _version: "3",
       _data,
-      channel,
       client: {
         watchId,
         watchTrackId,
@@ -197,7 +235,6 @@ const VideoInfoLoader = (function () {
       genre: {
         key: genreKey,
       },
-      owner,
       payment: {
         isNeedPayment,
         isMemberFree,
@@ -227,6 +264,7 @@ const VideoInfoLoader = (function () {
         isLiked,
       },
       domandInfo,
+      ownerInfo,
       viewerInfo,
       resumeInfo,
     };
@@ -266,7 +304,7 @@ const VideoInfoLoader = (function () {
       // okReason,
       metadata: {
         jsonLd: {
-          owner: ownerInfo,
+          owner,
           // videoObject,
         },
         // gtm,
@@ -366,6 +404,12 @@ const VideoInfoLoader = (function () {
       id: viewer?.id ?? 0,
       isPremium: viewer?.isPremium ?? false,
     };
+    const ownerInfo = {
+      type,
+      id,
+      name,
+      iconUrl,
+    } = owner;
     const {
       contents: domandContent,
       ...domandInfo
@@ -387,7 +431,6 @@ const VideoInfoLoader = (function () {
       genre: {
         key: genreKey,
       },
-      owner: ownerInfo,
       payment: {
         isNeedPayment,
         isMemberFree,
@@ -429,6 +472,7 @@ const VideoInfoLoader = (function () {
         ...domandContent,
         ...domandInfo,
       },
+      ownerInfo,
       viewerInfo,
       resumeInfo,
     };
@@ -537,7 +581,6 @@ const VideoInfoLoader = (function () {
         // width: _data.video.width, // dmcInfo?.movie.videos[0].metadata.resolution.width
         // height: _data.video.height, // dmcInfo?.movie.videos[0].metadata.resolution.height
 
-        isChannel: _data.owner?.type === "channel" || _data.channel != null,
         isMymemory: false,
         communityId: _data.community?.id ?? null,
         isLiked: _data.video.isLiked,
@@ -551,7 +594,7 @@ const VideoInfoLoader = (function () {
         tagEdit: _data.tagEdit,
       },
       viewerInfo: _data.viewerInfo,
-      ownerInfo: _data.owner,
+      ownerInfo: _data.ownerInfo,
       additionalInfoKey: _data.lazy?.authKey,
       clientTrackId: _data.client.watchTrackId,
     };

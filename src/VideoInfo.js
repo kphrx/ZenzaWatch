@@ -221,7 +221,6 @@ class VideoFilter {
 
   isNgVideo(videoInfo) {
     let isNg = false;
-    let isChannel = videoInfo.isChannel;
     let ngTag = this.ngTag;
 
     videoInfo.tagList.forEach(tag => {
@@ -389,7 +388,7 @@ class VideoInfoModel extends JSONable {
   }
 
   get isChannel() {
-    return !!this._videoDetail.isChannel;
+    return this._watchApiData.ownerInfo.type === "channel";
   }
 
   get isMymemory() {
@@ -472,36 +471,30 @@ class VideoInfoModel extends JSONable {
    * チャンネル動画かどうかで分岐
    */
   get owner() {
-    if (this.isChannel) {
-      let {
-        iconUrl = 'https://secure-dcdn.cdn.nimg.jp/nicoaccount/usericon/defaults/blank.jpg',
-        id,
-        type,
-        name,
-      } = {...this._watchApiData.ownerInfo};
+    const {
+      iconUrl: icon = 'https://secure-dcdn.cdn.nimg.jp/nicoaccount/usericon/defaults/blank.jpg',
+      id,
+      type,
+      name,
+    } = {...this._watchApiData.ownerInfo};
+    if (type === "channel") {
       return {
         type,
         url: `https://ch.nicovideo.jp/${id}`,
-        icon: iconUrl,
+        icon,
         id,
         linkId: id,
         name,
       };
     } else {
       // 退会しているユーザーだと空になっている
-      let {
-        iconUrl = 'https://secure-dcdn.cdn.nimg.jp/nicoaccount/usericon/defaults/blank.jpg',
-        id,
-        type,
-        name = '(非公開ユーザー)',
-      } = {...this._watchApiData.ownerInfo};
       return {
         type,
         url: id ? `https://www.nicovideo.jp/user/${id}` : '#',
-        icon: iconUrl,
+        icon,
         id,
         linkId: `user/${id}`,
-        name,
+        name: name ?? '(非公開ユーザー)',
       };
     }
   }
