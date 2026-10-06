@@ -405,11 +405,11 @@ const VideoInfoLoader = (function () {
       isPremium: viewer?.isPremium ?? false,
     };
     const ownerInfo = {
-      type,
-      id,
-      name,
-      iconUrl,
-    } = owner;
+      type: owner?.type,
+      id: owner?.id,
+      name: owner?.name,
+      iconUrl: owner?.iconUrl,
+    };
     const {
       contents: domandContent,
       ...domandInfo

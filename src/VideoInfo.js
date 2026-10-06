@@ -388,7 +388,7 @@ class VideoInfoModel extends JSONable {
   }
 
   get isChannel() {
-    return this._watchApiData.ownerInfo.type === "channel";
+    return this.owner.type === "channel";
   }
 
   get isMymemory() {
@@ -477,7 +477,7 @@ class VideoInfoModel extends JSONable {
       type,
       name,
     } = {...this._watchApiData.ownerInfo};
-    if (type === "channel") {
+    if (type === 'channel') {
       return {
         type,
         url: `https://ch.nicovideo.jp/${id}`,
@@ -489,7 +489,7 @@ class VideoInfoModel extends JSONable {
     } else {
       // 退会しているユーザーだと空になっている
       return {
-        type,
+        type: type ?? 'user',
         url: id ? `https://www.nicovideo.jp/user/${id}` : '#',
         icon,
         id,
