@@ -32,7 +32,7 @@
 // @exclude        *://ext.nicovideo.jp/thumb_channel/*
 // @grant          none
 // @author         segabito
-// @version        2.6.3-fix-playlist.56
+// @version        2.6.3-fix-playlist.57
 // @run-at         document-body
 // @require        https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js
 // @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaWatch-dev.user.js
@@ -101,7 +101,7 @@ AntiPrototypeJs();
     let {dimport, workerUtil, IndexedDbStorage, Handler, PromiseHandler, Emitter, parseThumbInfo, WatchInfoCacheDb, StoryboardCacheDb, VideoSessionWorker} = window.ZenzaLib;
     START_PAGE_QUERY = decodeURIComponent(START_PAGE_QUERY);
 
-    var VER = '2.6.3-fix-playlist.56';
+    var VER = '2.6.3-fix-playlist.57';
     const ENV = 'DEV';
 
 
@@ -6553,11 +6553,11 @@ const VideoInfoLoader = (function () {
 			isPremium: viewer?.isPremium ?? false,
 		};
 		const ownerInfo = {
-			type,
-			id,
-			name,
-			iconUrl,
-		} = owner;
+			type: owner?.type,
+			id: owner?.id,
+			name: owner?.name,
+			iconUrl: owner?.iconUrl,
+		};
 		const {
 			contents: domandContent,
 			...domandInfo
@@ -8034,7 +8034,7 @@ class VideoInfoModel extends JSONable {
 		};
 	}
 	get isChannel() {
-		return this._watchApiData.ownerInfo.type === "channel";
+		return this.owner.type === "channel";
 	}
 	get isMymemory() {
 		return !!this._videoDetail.isMymemory;
@@ -8101,7 +8101,7 @@ class VideoInfoModel extends JSONable {
 			type,
 			name,
 		} = {...this._watchApiData.ownerInfo};
-		if (type === "channel") {
+		if (type === 'channel') {
 			return {
 				type,
 				url: `https://ch.nicovideo.jp/${id}`,
@@ -8112,7 +8112,7 @@ class VideoInfoModel extends JSONable {
 			};
 		} else {
 			return {
-				type,
+				type: type ?? 'user',
 				url: id ? `https://www.nicovideo.jp/user/${id}` : '#',
 				icon,
 				id,
