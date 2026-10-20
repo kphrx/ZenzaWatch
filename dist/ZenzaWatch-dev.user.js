@@ -32,7 +32,7 @@
 // @exclude        *://ext.nicovideo.jp/thumb_channel/*
 // @grant          none
 // @author         segabito
-// @version        2.6.3-fix-playlist.57
+// @version        2.6.3-fix-playlist.58
 // @run-at         document-body
 // @require        https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js
 // @downloadURL    https://github.com/kphrx/ZenzaWatch/raw/playlist-deploy/dist/ZenzaWatch-dev.user.js
@@ -101,7 +101,7 @@ AntiPrototypeJs();
     let {dimport, workerUtil, IndexedDbStorage, Handler, PromiseHandler, Emitter, parseThumbInfo, WatchInfoCacheDb, StoryboardCacheDb, VideoSessionWorker} = window.ZenzaLib;
     START_PAGE_QUERY = decodeURIComponent(START_PAGE_QUERY);
 
-    var VER = '2.6.3-fix-playlist.57';
+    var VER = '2.6.3-fix-playlist.58';
     const ENV = 'DEV';
 
 
@@ -6761,7 +6761,8 @@ const VideoInfoLoader = (function () {
 			originalData.linkedChannelVideo = null;
 			return Promise.reject();
 		}
-		const url = `https://www.nicovideo.jp/watch/${videoId}?responseType=json`;
+		const url = new URL(videoId, 'https://www.nicovideo.jp/watch/');
+		url.search = new URLSearchParams({responseType: 'json', nvpcClientVersion: 1}).toString();
 		window.console.info('%cloadLinkedChannelVideoInfo', 'background: cyan', linkedChannelVideo);
 		return new Promise(r => {
 			setTimeout(r, 1000);
@@ -6856,14 +6857,14 @@ const VideoInfoLoader = (function () {
 		return new Promise(resolve => setTimeout(resolve, sleepTime));
 	};
 	const loadPromise = function (watchId, options, isRetry = false) {
-		let url = `https://www.nicovideo.jp/watch/${watchId}`;
-		console.log('%cloadFromWatchApiData...', 'background: lightgreen;', watchId, url);
-		const query = ['responseType=json'];
+		const url = new URL(watchId, 'https://www.nicovideo.jp/watch/');
+		console.log('%cloadFromWatchApiData...', 'background: lightgreen;', watchId, url.toString());
+		const query = new URLSearchParams({responseType: 'json', nvpcClientVersion: 1});
 		if (options.economy === true) {
-			query.push('eco=1');
+			query.set('eco', 1);
 		}
-		if (query.length > 0) {
-			url += '?' + query.join('&');
+		if (query.size > 0) {
+			url.search = query.toString();
 		}
 		return netUtil.fetch(url, {
 			credentials: 'include',
@@ -7938,7 +7939,7 @@ class VideoInfoModel extends JSONable {
 		this._cacheData = localCacheData;
 		this._watchApiData = info.watchApiData;
 		this._videoDetail = info.watchApiData.videoDetail;
-		this._viewerInfo = info.viewerInfo;               // 閲覧者(＝おまいら)の情報
+		this._viewerInfo = info.watchApiData.viewerInfo;               // 閲覧者(＝おまいら)の情報
 		this._ngFilters = info.ngFilters;
 		this._msgInfo = info.msgInfo;
 		this._dmcInfo = (info.dmcInfo && info.dmcInfo.movie.session) ? new DmcInfo(info.dmcInfo) : null;
