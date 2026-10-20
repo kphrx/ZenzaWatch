@@ -277,6 +277,7 @@ const VideoInfoLoader = (function () {
     }
 
     const {
+      // responseType,
       client: {
         // nicosid,
         watchId,
@@ -640,7 +641,8 @@ const VideoInfoLoader = (function () {
       return Promise.reject();
     }
 
-    const url = `https://www.nicovideo.jp/watch/${videoId}?responseType=json`;
+    const url = new URL(videoId, 'https://www.nicovideo.jp/watch/');
+    url.search = new URLSearchParams({responseType: 'json', nvpcClientVersion: 1}).toString();
     window.console.info('%cloadLinkedChannelVideoInfo', 'background: cyan', linkedChannelVideo);
     return new Promise(r => {
       setTimeout(r, 1000);
@@ -742,14 +744,14 @@ const VideoInfoLoader = (function () {
   };
 
   const loadPromise = function (watchId, options, isRetry = false) {
-    let url = `https://www.nicovideo.jp/watch/${watchId}`;
-    console.log('%cloadFromWatchApiData...', 'background: lightgreen;', watchId, url);
-    const query = ['responseType=json'];
+    const url = new URL(watchId, 'https://www.nicovideo.jp/watch/');
+    console.log('%cloadFromWatchApiData...', 'background: lightgreen;', watchId, url.toString());
+    const query = new URLSearchParams({responseType: 'json', nvpcClientVersion: 1});
     if (options.economy === true) {
-      query.push('eco=1');
+      query.set('eco', 1);
     }
-    if (query.length > 0) {
-      url += '?' + query.join('&');
+    if (query.size > 0) {
+      url.search = query.toString();
     }
 
     return netUtil.fetch(url, {

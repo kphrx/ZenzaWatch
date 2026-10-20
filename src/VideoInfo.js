@@ -260,7 +260,7 @@ class VideoInfoModel extends JSONable {
     this._cacheData = localCacheData;
     this._watchApiData = info.watchApiData;
     this._videoDetail = info.watchApiData.videoDetail;
-    this._viewerInfo = info.viewerInfo;               // 閲覧者(＝おまいら)の情報
+    this._viewerInfo = info.watchApiData.viewerInfo;               // 閲覧者(＝おまいら)の情報
     this._ngFilters = info.ngFilters;
     this._msgInfo = info.msgInfo;
     this._dmcInfo = (info.dmcInfo && info.dmcInfo.movie.session) ? new DmcInfo(info.dmcInfo) : null;
